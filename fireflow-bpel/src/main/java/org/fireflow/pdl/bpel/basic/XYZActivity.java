@@ -1,14 +1,20 @@
 package org.fireflow.pdl.bpel.basic;
 
-import org.fireflow.engine.WorkflowSession;
+import javax.xml.namespace.QName;
+
+import org.fireflow.client.WorkflowSession;
+import org.fireflow.client.impl.WorkflowSessionLocalImpl;
 import org.fireflow.engine.context.RuntimeContext;
 import org.fireflow.engine.entity.runtime.ProcessInstance;
-import org.fireflow.engine.impl.WorkflowSessionLocalImpl;
+import org.fireflow.engine.entity.runtime.Variable;
+import org.fireflow.engine.entity.runtime.impl.AbsVariable;
+import org.fireflow.engine.entity.runtime.impl.VariableImpl;
 import org.fireflow.engine.modules.persistence.PersistenceService;
 import org.fireflow.engine.modules.persistence.VariablePersister;
 import org.fireflow.pvm.kernel.Token;
 import org.fireflow.pvm.pdllogic.BusinessStatus;
 import org.fireflow.pvm.pdllogic.ExecuteResult;
+import org.firesoa.common.schema.NameSpaces;
 
 public class XYZActivity extends BasicActivity {
 	public XYZActivity(String name){
@@ -21,10 +27,11 @@ public class XYZActivity extends BasicActivity {
 			Object workflowElement) {
 		
 		RuntimeContext ctx = ((WorkflowSessionLocalImpl)session).getRuntimeContext();
-		ProcessInstance processInstance = session.getCurrentProcessInstance();
+		ProcessInstance processInstance = ((WorkflowSessionLocalImpl)session).getCurrentProcessInstance();
 		PersistenceService persistenceService = ctx.getEngineModule(PersistenceService.class, token.getProcessType());
 		VariablePersister variablePersister = persistenceService.getVariablePersister();
-		Object _x = variablePersister.findVariableValue(processInstance.getScopeId(), "x");
+		Variable var = variablePersister.findVariable(processInstance.getScopeId(), "x");
+		Object _x = var.getPayload();
 		
 		if (_x != null) {
 			Integer x = (Integer) _x;
@@ -37,7 +44,8 @@ public class XYZActivity extends BasicActivity {
 
 			x = x + 1;
 
-			variablePersister.setVariable(processInstance, "x", x);
+			((VariableImpl)var).setPayload(x);
+			variablePersister.saveOrUpdate(var);
 		}else{
 			System.out.println(this.getName() + " executed!(x is null)");
 		}

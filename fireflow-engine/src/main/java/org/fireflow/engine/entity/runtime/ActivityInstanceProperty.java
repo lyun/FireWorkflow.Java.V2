@@ -16,12 +16,11 @@
  */
 package org.fireflow.engine.entity.runtime;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
 import org.fireflow.engine.entity.EntityProperty;
+import org.fireflow.engine.entity.WorkflowEntity;
 
 
 /**
@@ -37,15 +36,22 @@ public enum ActivityInstanceProperty implements EntityProperty{
 	PROCESS_ID("processId"),
 	VERSION("version"),
 	PROCESS_TYPE("processType"),
+	SUBPROCESS_ID("subProcessId"),
 	PROCESS_NAME("processName"),
 	PROCESS_DISPLAY_NAME("processDisplayName"),
-	BIZ_CATEGORY("bizCategory"),
+	SUBPROCESS_NAME("subProcessName"),
+	SUBPROCESS_DISPLAY_NAME("subProcessDisplayName"),
+	BIZ_TYPE("bizType"),
 	
 	SERVICE_ID("serviceId"),
+	SERVICE_VERSION("serviceVersion"),
 	SERVICE_TYPE("serviceType"),
 	
 	BIZ_ID("bizId"),
 	SUB_BIZ_ID("subBizId"),
+	PROCINST_CREATOR_ID("procInstCreatorId"),
+	PROCINST_CREATOR_NAME("procInstCreatorName"),
+	PROCINST_CREATED_TIME("procInstCreatedTime"),
 
 
 	STATE("state"),
@@ -61,7 +67,7 @@ public enum ActivityInstanceProperty implements EntityProperty{
 	TOKEN_ID("tokenId"),
 	
 	TARGET_ACTIVITY_ID("targetActivityId"),
-	ASSIGNMENT_STRATEGY("assignmentStrategy"),	
+//	ASSIGNMENT_STRATEGY("assignmentStrategy"),	
 	NOTE("note")
 	
 	;
@@ -89,6 +95,17 @@ public enum ActivityInstanceProperty implements EntityProperty{
 		return this.getDisplayName(Locale.getDefault());
 	}
 	
+    public static ActivityInstanceProperty fromValue(String v) {
+        for (ActivityInstanceProperty c: ActivityInstanceProperty.values()) {
+            if (c.getPropertyName().equals(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
+    }
+	public String getEntityName(){
+		return WorkflowEntity.ENTITY_NAME_ACTIVITY_INSTANCE;
+	}
 //	public List<EntityProperty> getAllProperties(){
 //		List<EntityProperty> all = new ArrayList<EntityProperty>();
 //		all.add(ID);

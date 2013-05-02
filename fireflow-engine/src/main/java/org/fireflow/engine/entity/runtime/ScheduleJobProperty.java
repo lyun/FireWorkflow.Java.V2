@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 import org.fireflow.engine.entity.EntityProperty;
+import org.fireflow.engine.entity.WorkflowEntity;
 
 /**
  * 
@@ -46,7 +47,7 @@ public enum ScheduleJobProperty implements EntityProperty {
 	CREATE_NEW_PROCESS_INSTANCE("createNewProcessInstance"),
 	NOTE("note"),
 	
-	ACTIVITY_INSTANCE_$_ID("activityInstance"), 
+	ACTIVITY_INSTANCE_$_ID("activityInstance.id"), 
 	ACTIVITY_INSTANCE_$_PROCESSINSTANCE_ID(	"activityInstance.processInstanceId"),
 	ACTIVITY_INSTANCE_$_BIZ_ID(	"activityInstance.bizId"), 
 	ACTIVITY_INSTANCE_$_ACTIVITY_ID("activityInstance.activityId"),
@@ -79,4 +80,15 @@ public enum ScheduleJobProperty implements EntityProperty {
 		return this.getDisplayName(Locale.getDefault());
 	}
 	
+    public static ScheduleJobProperty fromValue(String v) {
+        for (ScheduleJobProperty c: ScheduleJobProperty.values()) {
+            if (c.getPropertyName().equals(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
+    }
+	public String getEntityName(){
+		return WorkflowEntity.ENTITY_NAME_SCHEDULE_JOB;
+	}
 }

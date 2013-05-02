@@ -16,29 +16,12 @@
  */
 package org.fireflow.engine.entity.repository;
 
-import java.util.Date;
-
-import org.fireflow.engine.entity.WorkflowEntity;
 
 /**
  * @author 非也
  * @version 2.0
  */
-public interface ProcessDescriptor extends WorkflowEntity{
-	public static final String OPERATION_UPLOAD = "UPLOAD";
-	public static final String OPERATION_UPDATE = "UPDATE";
-	public static final String OPERATION_PUBLISH = "PUBLISH";
-	public static final String OPERATION_UNPUBLISH = "UNPUBLISH";
-	public static final String OPERATION_UPLOAD_PUBLISH = "UPLOAD_PUBLISH";
-	public static final String OPERATION_UPDATE_PUBLISH = "UPDATE_PUBLISH";
-	public static final String OPERATION_UPDATE_UNPUBLISH = "UPDATE_UNPUBLISH";
-
-	/**
-	 * repository id
-	 * @return
-	 */
-    public String getId();
-
+public interface ProcessDescriptor extends RepositoryDescriptor{
     /**
      * 流程Id
      * @return
@@ -58,92 +41,23 @@ public interface ProcessDescriptor extends WorkflowEntity{
      */
 	public String getProcessType() ;
 	
-//	public ProcessKey getProcessKey();
-	
-    /**
-     * 流程名称
-     * @return
-     */
-    public String getName();
     
     /**
-     * 流程中文名
+     * 是否是定时启动的流程
      * @return
      */
-    public String getDisplayName();
-
-    /**
-     * 流程描述信息
-     * @return
-     */
-    public String getDescription() ;
-
-    /**
-     * 获得业务流程业务类别
-     * @return
-     */
-    public String getBizCategory();
-
-    /**
-     * 流程发布状态
-     * @return
-     */
-    public Boolean getPublishState();
-
-    //////////////////////////////////////////////////////
-    ////////// 下面是流程存储库的管理字段    ////////////////
-    /////////////////////////////////////////////////////
-    
-
+    public Boolean getTimerStart();
     
     /**
-     * 流程文件在classpath中的全路径名
+     * 是否具有回调接口，回调接口将被发布成WebService。
      * @return
      */
-    public String getFileName();
-    
-    /**
-     * 流程所属部门的Id
-     * @return
-     */
-    public String getOwnerDeptId();
-    
-    /**
-     * 流程所属部门的名称
-     * @return
-     */
-    public String getOwnerDeptName();
-    
+    public Boolean getHasCallbackService();
 
     /**
-     * 批准人
+     * 转换成ProcessRepository对象（实际是ProcessRepositoryImpl对象）
+     * @param descriptor
      * @return
      */
-    public String getApprover() ;
-    
-    
-    /**
-     * 批准时间
-     * @return
-     */
-    public Date getApprovedTime() ;
-    
-
-    /**
-     * 最后修改人姓名
-     * @return
-     */
-	public String getLatestEditor() ;
-
-	/**
-	 * 最后修改时间
-	 * @return
-	 */
-	public Date getLatestEditTime();
-
-	/**
-	 * 最后一次修改操作的内容，可以是UPLOAD,UPDATE,PUBLISH
-	 * @return
-	 */
-	public String getLatestOperation();
+    public ProcessRepository toProcessRepository();
 }

@@ -16,10 +16,15 @@
  */
 package org.fireflow.engine.context;
 
+import javax.jws.WebMethod;
+
+import org.fireflow.engine.exception.EngineException;
+
 /**
  * @author 非也
  * @version 2.0
  */
 public interface EngineModule {
-
+	@WebMethod(exclude=true)
+	public void init(RuntimeContext runtimeContext)throws EngineException;
 }

@@ -16,7 +16,6 @@
  */
 package org.fireflow.engine.modules.instancemanager.event;
 
-import org.fireflow.engine.exception.EngineException;
 
 /**
  * 
@@ -31,20 +30,40 @@ public abstract class AbsProcessInstanceEventListener implements
 	 * @see org.fireflow.engine.modules.instancemanager.event.ProcessInstanceEventListener#onProcessInstanceEventFired(org.fireflow.engine.modules.instancemanager.event.ProcessInstanceEvent)
 	 */
 	final public void onProcessInstanceEventFired(ProcessInstanceEvent e) {
-		EventType type = e.getEventType();
-		if (type.equals(EventType.ON_PROCESS_INSTANCE_CREATED)){
+		ProcessInstanceEventTrigger type = (ProcessInstanceEventTrigger)e.getEventTrigger();
+		if (type.equals(ProcessInstanceEventTrigger.ON_PROCESS_INSTANCE_CREATED)){
 			this.onProcessInstanceCreated(e);
 		}
-		else if (type.equals(EventType.AFTER_PROCESS_INSTANCE_END)){
+		else if (type.equals(ProcessInstanceEventTrigger.AFTER_PROCESS_INSTANCE_END)){
 			this.afterProcessInstanceEnd(e);
+		}
+		else if (type.equals(ProcessInstanceEventTrigger.BEFORE_PROCESS_INSTANCE_RUN)){
+			beforeProcessInstanceRun(e);
+		}
+		else if (type.equals(ProcessInstanceEventTrigger.ON_PROCESS_INSTANCE_SUSPENDED)){
+			onProcessInstanceSuspended(e);
+		}
+		else if (type.equals(ProcessInstanceEventTrigger.ON_PROCESS_INSTANCE_RESTORED)){
+			onProcessInstanceRestored(e);
 		}
 	}
 	
-	public void onProcessInstanceCreated(ProcessInstanceEvent e){
+	protected void onProcessInstanceCreated(ProcessInstanceEvent e){
 		
 	}
-	public void afterProcessInstanceEnd(ProcessInstanceEvent e){
+	protected void afterProcessInstanceEnd(ProcessInstanceEvent e){
 		
 	}
 
+	protected void beforeProcessInstanceRun(ProcessInstanceEvent e){
+		
+	}
+	
+	protected void onProcessInstanceSuspended(ProcessInstanceEvent e){
+		
+	}
+	
+	protected void onProcessInstanceRestored(ProcessInstanceEvent e){
+		
+	}
 }

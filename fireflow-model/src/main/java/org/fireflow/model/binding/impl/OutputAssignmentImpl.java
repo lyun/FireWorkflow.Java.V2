@@ -24,32 +24,8 @@ import org.fireflow.model.data.Expression;
  * 
  * @author 非也
  * @version 2.0
+ * @deprecated
  */
-public class OutputAssignmentImpl implements OutputAssignment {
-	private Expression from = null;
-	private String to = null;
-	/**
-	 * @return the from
-	 */
-	public Expression getFrom() {
-		return from;
-	}
-	/**
-	 * @param from the from to set
-	 */
-	public void setFrom(Expression from) {
-		this.from = from;
-	}
-	/**
-	 * @return the to
-	 */
-	public String getTo() {
-		return to;
-	}
-	/**
-	 * @param to the to to set
-	 */
-	public void setTo(String to) {
-		this.to = to;
-	}
+public class OutputAssignmentImpl extends AssignmentImpl implements OutputAssignment {
+
 }

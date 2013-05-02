@@ -20,6 +20,8 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 import org.fireflow.engine.entity.EntityProperty;
+import org.fireflow.engine.entity.WorkflowEntity;
+import org.fireflow.engine.entity.runtime.WorkItemProperty;
 
 /**
  * @author 非也
@@ -32,22 +34,27 @@ public enum ProcessDescriptorProperty 	implements EntityProperty{
 		DESCRIPTION("description"),
 		FILE_NAME("fileName"),
 
-		PROCESS_ID("processId"),
-		VERSION("version"),
-		PROCESS_TYPE("processType"),
-		BIZ_CATEGORY("bizCategory"),
+		BIZ_TYPE("bizType"),
 		
 		PUBLISH_STATE("publishState"),
-		LATEST_EDITOR("latestEditor"),
-		LATEST_EDIT_TIME("latestEditTime"),
-		LATEST_OPERATION("latestOperation"),
+//		LAST_EDIT_TIME("lastEditTime"),
+//		LAST_OPERATION("lastOperation"),
 		
 		OWNER_DEPT_ID("ownerDeptId"),
 		OWNER_DEPT_NAME("ownerDeptName"),
 		APPROVER("approver"),
 		APPROVED_TIME("approvedTime"),
 
+		LAST_UPDATE_TIME("lastUpdateTime"),
+		LAST_EDITOR("lastEditor"),
 		
+		//流程特定的属性
+		IS_TIMER_START("isTimerStart"),
+		HAS_CALLBACK_SERVICE("hasCallbackService"),
+		
+		PROCESS_ID("processId"),
+		VERSION("version"),
+		PROCESS_TYPE("processType"),
 		;
 		
 		
@@ -72,5 +79,16 @@ public enum ProcessDescriptorProperty 	implements EntityProperty{
 		public String getDisplayName(){
 			return this.getDisplayName(Locale.getDefault());
 		}
-		
+	    public static ProcessDescriptorProperty fromValue(String v) {
+	        for (ProcessDescriptorProperty c: ProcessDescriptorProperty.values()) {
+	            if (c.getPropertyName().equals(v)) {
+	                return c;
+	            }
+	        }
+	        throw new IllegalArgumentException(v);
+	    }
+		public String getEntityName(){
+			return WorkflowEntity.ENTITY_NAME_PROCESS_DESCRIPTOR;
+		}
+
 }

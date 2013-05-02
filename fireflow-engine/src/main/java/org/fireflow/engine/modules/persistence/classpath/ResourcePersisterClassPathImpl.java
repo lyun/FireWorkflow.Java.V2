@@ -25,21 +25,20 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.fireflow.engine.WorkflowQuery;
+import org.fireflow.client.WorkflowQuery;
 import org.fireflow.engine.entity.WorkflowEntity;
-import org.fireflow.engine.exception.EngineException;
 import org.fireflow.engine.entity.repository.ResourceDescriptor;
 import org.fireflow.engine.entity.repository.ResourceDescriptorProperty;
 import org.fireflow.engine.entity.repository.ResourceRepository;
 import org.fireflow.engine.entity.repository.impl.ResourceDescriptorImpl;
 import org.fireflow.engine.entity.repository.impl.ResourceRepositoryImpl;
-import org.fireflow.engine.misc.Utils;
+import org.fireflow.engine.exception.EngineException;
 import org.fireflow.engine.modules.persistence.PersistenceService;
 import org.fireflow.engine.modules.persistence.ResourcePersister;
-import org.fireflow.model.InvalidModelException;
-import org.fireflow.model.io.Dom4JResourceParser;
-import org.fireflow.model.io.ParserException;
-import org.fireflow.model.resourcedef.Resource;
+import org.fireflow.misc.Utils;
+import org.fireflow.model.io.DeserializerException;
+import org.fireflow.model.io.resource.ResourceDeserializer;
+import org.fireflow.model.resourcedef.ResourceDef;
 
 
 /**
@@ -52,7 +51,7 @@ public class ResourcePersisterClassPathImpl implements ResourcePersister {
 	private static Log log = LogFactory.getLog(ResourcePersisterClassPathImpl.class);
 
 	PersistenceService persistenceService = null;
-	public ResourceRepository persistResourceFileToRepository(
+	public List<ResourceDescriptor> persistResourceFileToRepository(
 			InputStream resourceFileInput,
 			Map<ResourceDescriptorProperty, Object> properties){
 		throw new UnsupportedOperationException("This method is unsupported");
@@ -61,7 +60,7 @@ public class ResourcePersisterClassPathImpl implements ResourcePersister {
 	 * @see org.fireflow.engine.modules.persistence.ResourcePersister#findServiceRepositoryByFileName(java.lang.String)
 	 */
 	public ResourceRepository findResourceRepositoryByFileName(
-			String resourceFileName) throws ParserException{
+			String resourceFileName) throws DeserializerException{
 		if (resourceFileName==null || resourceFileName.trim().equals("")){
 			throw new EngineException("The resource file name can NOT be empty!");
 		}
@@ -76,21 +75,25 @@ public class ResourcePersisterClassPathImpl implements ResourcePersister {
 	
 	private ResourceRepository repositoryFromInputStream(
 			String resourceFileName, InputStream inStream)
-			throws ParserException {
-		Dom4JResourceParser parser = new Dom4JResourceParser();
+			throws DeserializerException {
+		ResourceDeserializer parser = new ResourceDeserializer();
 		try {
-			byte[] bytes = Utils.getBytes(inStream);
+			byte[] bytes = Utils.inputStream2ByteArray(inStream);
 			ByteArrayInputStream bytesIn = new ByteArrayInputStream(bytes);
-			List<Resource> resources = parser.parse(bytesIn);
+			
+			String charset = Utils.findXmlCharset(bytesIn);
+			
+			List<ResourceDef> resources = parser.deserialize(bytesIn);
 			
 			ResourceRepositoryImpl repository = new ResourceRepositoryImpl();
-			repository.setResourceContent(new String(bytes,"UTF-8"));
+			repository.setResourceContent(new String(bytes,charset));
 			repository.setResources(resources);
 			repository.setFileName(resourceFileName);
 			
+			
 			if (resources!=null){
 				List<ResourceDescriptor> resourceDescriptors = new ArrayList<ResourceDescriptor>();
-				for (Resource rsc : resources){
+				for (ResourceDef rsc : resources){
 					ResourceDescriptorImpl desc = new ResourceDescriptorImpl();
 					desc.setResourceId(rsc.getId());
 					desc.setResourceType(rsc.getResourceType().getValue());
@@ -101,15 +104,17 @@ public class ResourcePersisterClassPathImpl implements ResourcePersister {
 					
 					resourceDescriptors.add(desc);
 				}
+				
+				repository.setResourceDescriptors(resourceDescriptors);
 			}
 			
 			return repository;
-		} catch (ParserException e) {
+		} catch (DeserializerException e) {
 			log.error(e);
 			throw e;
 		} catch (IOException e) {
 			log.error(e);
-			throw new ParserException(e);
+			throw new DeserializerException(e);
 		}
 
 	}

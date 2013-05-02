@@ -18,65 +18,87 @@ package org.fireflow.engine.entity.runtime.impl;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Properties;
 
-import org.fireflow.engine.WorkflowSession;
-import org.fireflow.engine.WorkflowStatement;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+
+import org.fireflow.client.WorkflowSession;
+import org.fireflow.client.WorkflowStatement;
+import org.fireflow.client.impl.WorkflowStatementLocalImpl;
+import org.fireflow.engine.entity.AbsWorkflowEntity;
 import org.fireflow.engine.entity.repository.ProcessKey;
 import org.fireflow.engine.entity.runtime.ActivityInstance;
 import org.fireflow.engine.entity.runtime.ActivityInstanceState;
 import org.fireflow.engine.entity.runtime.ProcessInstance;
-import org.fireflow.engine.exception.EngineException;
 import org.fireflow.engine.exception.InvalidOperationException;
 import org.fireflow.model.InvalidModelException;
-import org.fireflow.model.binding.ResourceBinding;
-import org.fireflow.model.binding.ServiceBinding;
+import org.fireflow.server.support.DateTimeXmlAdapter;
 
 
 /**
  * @author 非也
  * @version 2.0
  */
-public abstract class AbsActivityInstance implements ActivityInstance {
+@XmlType(name="absActivityInstanceType")
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlSeeAlso({ActivityInstanceImpl.class,ActivityInstanceHistory.class})
+public abstract class AbsActivityInstance extends AbsWorkflowEntity implements ActivityInstance {
 
-    private String id = null;
-    private String name = null;
-    private String displayName = null;
-    private String nodeId = null;
+	protected String procInstCreatorId = null;
+	protected String procInstCreatorName = null;
+	
+	@XmlJavaTypeAdapter(DateTimeXmlAdapter.class)
+	protected Date procInstCreatedTime = null;
+	protected String name = null;
+	protected String displayName = null;
+	protected String nodeId = null;
     
-    private String processId = null;
-    private Integer version = null;
-    private String processType = null;   
-    private String processName = null;
-    private String processDisplayName = null;
-    private String bizCategory = null;
-    private String serviceId = null;
-    private String serviceType = null;
+	protected String processId = null;
+	protected Integer version = null;
+	protected String processType = null;   
+	protected String subflowId = null;
+	protected String processName = null;
+	protected String processDisplayName = null;
+	protected String subflowName = null;
+	protected String subflowDisplayName = null;
+	protected String bizCategory = null;
+	protected String serviceId = null;
+	protected String serviceVersion = null;
+	protected String serviceType = null;
     
-    private String bizId = null;
-    private String subBizId = null;
+	protected String bizId = null;
+	protected String subBizId = null;
 
-    private ActivityInstanceState state = ActivityInstanceState.INITIALIZED;
-    private Boolean suspended = Boolean.FALSE;
-    private Date createdTime = null;
-    private Date startedTime = null;
-    private Date expiredTime = null;
-    private Date endTime = null;
+	protected ActivityInstanceState state = ActivityInstanceState.INITIALIZED;
+	protected Boolean suspended = Boolean.FALSE;
+	
+	@XmlJavaTypeAdapter(DateTimeXmlAdapter.class)
+	protected Date createdTime = null;
+	
+	@XmlJavaTypeAdapter(DateTimeXmlAdapter.class)
+	protected Date startedTime = null;
+	
+	@XmlJavaTypeAdapter(DateTimeXmlAdapter.class)
+	protected Date expiredTime = null;
+	
+	@XmlJavaTypeAdapter(DateTimeXmlAdapter.class)
+	protected Date endTime = null;
+
+	protected String processInstanceId = null;
+	protected String parentScopeId = null;
+	protected String tokenId = null;
+	protected Integer stepNumber = null;
     
 
+	protected String targetActivityId = null;
+	protected String fromActivityId = null;
+	protected Boolean canBeWithdrawn = true;
 
-    private String processInstanceId = null;
-    private String parentScopeId = null;
-    private String tokenId = null;
-    private Integer stepNumber = null;
-    
-
-    private String targetActivityId = null;
-    private String fromActivityId = null;
-    private Boolean canBeWithdrawn = true;
-
-    private String note = null;
-    
-
+	protected String note = null;
 
 
 //	/* (non-Javadoc)
@@ -160,16 +182,6 @@ public abstract class AbsActivityInstance implements ActivityInstance {
 		this.expiredTime = expiredTime;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.fireflow.engine.entity.runtime.ActivityInstance#getId()
-	 */
-	public String getId() {
-		
-		return this.id;
-	}
-	public void setId(String id){
-		this.id = id;
-	}
 
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.entity.runtime.ActivityInstance#getName()
@@ -194,7 +206,7 @@ public abstract class AbsActivityInstance implements ActivityInstance {
 	public void setNote(String note){
 		this.note = note;
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.entity.runtime.ActivityInstance#getProcessId()
 	 */
@@ -206,12 +218,20 @@ public abstract class AbsActivityInstance implements ActivityInstance {
 	public void setProcessId(String processId){
 		this.processId = processId;
 	}
+	
+	public String getSubProcessId(){
+		return this.subflowId;
+	}
+	
+	public void setSubProcessId(String subflowId){
+		this.subflowId = subflowId;
+	}
 
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.entity.runtime.ActivityInstance#getProcessInstance(org.fireflow.engine.WorkflowSession)
 	 */
 	public ProcessInstance getProcessInstance(WorkflowSession session) {
-		WorkflowStatement statement = session.createWorkflowStatement(this.getProcessType());
+		WorkflowStatementLocalImpl statement = (WorkflowStatementLocalImpl)session.createWorkflowStatement(this.getProcessType());
 		return statement.getEntity(this.getProcessInstanceId(), ProcessInstance.class);
 	}
 
@@ -246,6 +266,16 @@ public abstract class AbsActivityInstance implements ActivityInstance {
 	public void setServiceId(String serviceId){
 		this.serviceId = serviceId;
 	}
+	
+	
+	public String getServiceVersion() {
+		return serviceVersion;
+	}
+
+	public void setServiceVersion(String serviceVersion) {
+		this.serviceVersion = serviceVersion;
+	}
+
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.entity.runtime.ActivityInstance#getServiceType()
 	 */
@@ -352,6 +382,11 @@ public abstract class AbsActivityInstance implements ActivityInstance {
 	public String getScopeId(){
 		return this.id;
 	}
+	
+	public String getProcessElementId(){
+		return this.nodeId;
+	}
+	
 	public String getParentScopeId(){
 		return this.parentScopeId;
 	}
@@ -368,6 +403,11 @@ public abstract class AbsActivityInstance implements ActivityInstance {
 		WorkflowStatement stmt = session.createWorkflowStatement(this.getProcessType());
 		stmt.setVariableValue(this, name,value);
 	}
+	public void setVariableValue(WorkflowSession session ,String name ,Object value,Properties headers)throws InvalidOperationException{
+		WorkflowStatement stmt = session.createWorkflowStatement(this.getProcessType());
+		stmt.setVariableValue(this, name,value,headers);
+	}
+	
 	public Map<String,Object> getVariableValues(WorkflowSession session){
 		WorkflowStatement stmt = session.createWorkflowStatement(this.getProcessType());
 		return stmt.getVariableValues(this);
@@ -408,6 +448,22 @@ public abstract class AbsActivityInstance implements ActivityInstance {
 	public void setProcessDisplayName(String processDisplayName) {
 		this.processDisplayName = processDisplayName;
 	}
+	
+	public String getSubProcessName(){
+		return this.subflowName;
+	}
+	
+	public void setSubProcessName(String subflowName){
+		this.subflowName = subflowName;
+	}
+	
+	public String getSubProcessDisplayName(){
+		return this.subflowDisplayName;
+	}
+	
+	public void setSubProcessDisplayName(String subflowDisplayName){
+		this.subflowDisplayName = subflowDisplayName;
+	}
 
 	/**
 	 * @return the canBeWithdrawn
@@ -423,12 +479,36 @@ public abstract class AbsActivityInstance implements ActivityInstance {
 		this.canBeWithdrawn = canBeWithdrawn;
 	}
 
-	public String getBizCategory() {
+	public String getBizType() {
 		return bizCategory;
 	}
 
-	public void setBizCategory(String bizCategory) {
+	public void setBizType(String bizCategory) {
 		this.bizCategory = bizCategory;
+	}
+
+	public String getProcInstCreatorId() {
+		return procInstCreatorId;
+	}
+
+	public void setProcInstCreatorId(String creatorId) {
+		this.procInstCreatorId = creatorId;
+	}
+
+	public String getProcInstCreatorName() {
+		return procInstCreatorName;
+	}
+
+	public void setProcInstCreatorName(String creatorName) {
+		this.procInstCreatorName = creatorName;
+	}
+
+	public Date getProcInstCreatedTime() {
+		return procInstCreatedTime;
+	}
+
+	public void setProcInstCreatedTime(Date processInstanceCreatedTime) {
+		this.procInstCreatedTime = processInstanceCreatedTime;
 	}
 	
 	

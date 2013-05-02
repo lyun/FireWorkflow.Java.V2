@@ -16,6 +16,7 @@
  */
 package org.fireflow.engine.modules.persistence;
 
+import org.fireflow.engine.context.AbsEngineModule;
 import org.fireflow.engine.context.RuntimeContext;
 import org.fireflow.engine.modules.process.ProcessUtil;
 
@@ -23,7 +24,7 @@ import org.fireflow.engine.modules.process.ProcessUtil;
  * @author 非也
  * @version 2.0
  */
-public class PersistenceServiceImpl implements PersistenceService {
+public class PersistenceServiceImpl  extends AbsEngineModule implements PersistenceService {
 	TokenPersister tokenPersister = null;
 	ActivityInstancePersister activityInstancePersister = null;
 	ProcessInstancePersister processInstancePersister = null;
@@ -38,6 +39,8 @@ public class PersistenceServiceImpl implements PersistenceService {
 	ServicePersister servicePersister = null;
 	
 	ResourcePersister resourcePersister = null;
+	
+	FireflowConfigPersister fireflowConfigPersister = null;
 	
 	RuntimeContext ctx = null;
 	
@@ -174,6 +177,15 @@ public class PersistenceServiceImpl implements PersistenceService {
 	public void setResourcePersister(ResourcePersister resourcePersister) {
 		this.resourcePersister = resourcePersister;
 		this.resourcePersister.setPersistenceService(this);
+	}
+	
+	public FireflowConfigPersister getFireflowConfigPersister(){
+		return fireflowConfigPersister;
+	}
+	
+	public void setFireflowConfigPersister(FireflowConfigPersister fireflowConfigPersister){
+		this.fireflowConfigPersister = fireflowConfigPersister;
+		this.fireflowConfigPersister.setPersistenceService(this);
 	}
 	
 	public ProcessUtil getProcessUtil(String processType){

@@ -17,18 +17,14 @@
 package org.fireflow.pdl.fpdl20.process.impl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.fireflow.model.AbstractModelElement;
-import org.fireflow.model.process.lifecycle.InstanceCreatorDef;
-import org.fireflow.model.process.lifecycle.InstanceExecutorDef;
-import org.fireflow.model.process.lifecycle.InstanceTerminatorDef;
+import org.fireflow.pdl.fpdl20.process.Activity;
 import org.fireflow.pdl.fpdl20.process.Node;
+import org.fireflow.pdl.fpdl20.process.SubProcess;
 import org.fireflow.pdl.fpdl20.process.Transition;
-import org.fireflow.pdl.fpdl20.process.WorkflowProcess;
-import org.fireflow.pdl.fpdl20.process.decorator.Decorator;
+import org.fireflow.pdl.fpdl20.process.features.Feature;
 
 /**
  * 流程图的节点。
@@ -47,16 +43,14 @@ public abstract class NodeImpl extends AbstractModelElement implements Node{
      */
     protected List<Transition> leavingTransitions = new ArrayList<Transition>();//输出弧
     
-    protected Decorator decorator = null;
-    
-    protected Map<String,String> extendAttributes = new HashMap<String,String>();
+    protected Feature decorator = null;
 	
 	
     public NodeImpl() {
     }
 
-    public NodeImpl(WorkflowProcess workflowProcess, String name) {
-        super(workflowProcess, name);
+    public NodeImpl(SubProcess subflow, String name) {
+        super(subflow, name);
     }
 
 	public List<Transition> getEnteringTransitions() {
@@ -68,15 +62,41 @@ public abstract class NodeImpl extends AbstractModelElement implements Node{
 		return leavingTransitions;
 	}
 
-	public Decorator getDecorator() {
+	public Feature getFeature() {
 		return decorator;
 	}
 
-	public void setDecorator(Decorator dec) {
+	public void setFeature(Feature dec) {
 		this.decorator = dec;
 	}
-
-	public Map<String, String> getExtendedAttributes() {
-		return extendAttributes;
+	
+	public List<Node> getNextNodes(){
+		List<Transition> leavingTransitions = this.getLeavingTransitions();
+		if (leavingTransitions==null || leavingTransitions.size()==0){
+			return null;
+		}
+		List<Node> result = new ArrayList<Node>();
+		for (Transition trans : leavingTransitions){
+			result.add(trans.getToNode());
+		}
+		return result;
+	}
+	
+	
+	public List<Activity> getNextActivities(){
+		List<Node> nextNodes = this.getNextNodes();
+		if (nextNodes==null || nextNodes.size()==0)return null;
+		List<Activity> result = new ArrayList<Activity>();
+		for (Node node : nextNodes){
+			if (node instanceof Activity){
+				result.add((Activity)node);
+			}else {
+				List<Activity> temp = node.getNextActivities();
+				if (temp!=null){
+					result.addAll(temp);
+				}
+			}
+		}
+		return result;
 	}
 }

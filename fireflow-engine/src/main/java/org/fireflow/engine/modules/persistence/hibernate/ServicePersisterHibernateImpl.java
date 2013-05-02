@@ -21,22 +21,25 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.fireflow.engine.entity.repository.ServiceDescriptor;
 import org.fireflow.engine.entity.repository.ServiceDescriptorProperty;
 import org.fireflow.engine.entity.repository.ServiceRepository;
 import org.fireflow.engine.entity.repository.impl.ServiceDescriptorImpl;
 import org.fireflow.engine.entity.repository.impl.ServiceRepositoryImpl;
 import org.fireflow.engine.exception.EngineException;
-import org.fireflow.engine.misc.Utils;
 import org.fireflow.engine.modules.persistence.ServicePersister;
-import org.fireflow.model.io.Dom4JServiceParser;
-import org.fireflow.model.io.ParserException;
-import org.fireflow.model.servicedef.Service;
+import org.fireflow.misc.Utils;
+import org.fireflow.model.InvalidModelException;
+import org.fireflow.model.io.DeserializerException;
+import org.fireflow.model.io.service.ServiceParser;
+import org.fireflow.model.servicedef.ServiceDef;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -72,18 +75,22 @@ public class ServicePersisterHibernateImpl extends AbsPersisterHibernateImpl imp
 
 		if (result!=null && result.getServiceContent()!=null){
 			try {
-				ByteArrayInputStream byteIn = new ByteArrayInputStream(result.getServiceContent().getBytes("UTF-8"));
+				String content = result.getServiceContent();
+				String charset = Utils.findXmlCharset(content);
+				ByteArrayInputStream byteIn = new ByteArrayInputStream(content.getBytes(charset));
 				
-				Dom4JServiceParser parser = new Dom4JServiceParser();
-				List<Service> services = parser.parse(byteIn);
+				
+				List<ServiceDef> services = ServiceParser.deserialize(byteIn);
 				
 				((ServiceRepositoryImpl)result).setServices(services);
 			} catch (UnsupportedEncodingException e) {
 				log.error(e);
-			}catch(ParserException e){
+			}catch(DeserializerException e){
 				log.error(e);
 			}
 			catch(IOException e){
+				log.error(e);
+			} catch (InvalidModelException e) {
 				log.error(e);
 			}
 		}
@@ -94,21 +101,19 @@ public class ServicePersisterHibernateImpl extends AbsPersisterHibernateImpl imp
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.modules.persistence.ServicePersister#persistServiceFileToRepository(java.io.InputStream, java.util.Map)
 	 */
-	public ServiceRepository persistServiceFileToRepository(
+	public List<ServiceDescriptor> persistServiceFileToRepository(
 			InputStream serviceFileInput,
-			Map<ServiceDescriptorProperty, Object> properties) {
+			Map<ServiceDescriptorProperty, Object> properties)throws InvalidModelException,DeserializerException {
 		if (properties==null) throw new EngineException("The service descriptor properties can NOT be emtpy!");
 		final String fileName = (String)properties.get(ServiceDescriptorProperty.FILE_NAME);
-		String lastEditor = (String)properties.get(ServiceDescriptorProperty.LATEST_EDITOR);
-		Date lastEditTime = (Date)properties.get(ServiceDescriptorProperty.LATEST_EDIT_TIME);
+		String lastEditor = (String)properties.get(ServiceDescriptorProperty.LAST_EDITOR);
+		Date lastEditTime = (Date)properties.get(ServiceDescriptorProperty.LAST_EDIT_TIME);
 		
 		if (fileName==null || fileName.trim().equals("")){
 			throw new EngineException("The FILE_NAME property can NOT be emtpy!");
 		}
 		ServiceRepository repository = repositoryFromInputStream(fileName,serviceFileInput);
-		
-		
-		
+
 		this.saveOrUpdate(repository);
 		
 		//将Service Descriptor先删后插……
@@ -127,53 +132,63 @@ public class ServicePersisterHibernateImpl extends AbsPersisterHibernateImpl imp
 		});
 		
 		
-		List<Service> services = repository.getServices();
+		List<ServiceDef> services = repository.getServices();
+		List<ServiceDescriptor> descriptors = new ArrayList<ServiceDescriptor>();
 		if (services!=null){
-			for (Service svc : services){
+			for (ServiceDef svc : services){
 				ServiceDescriptorImpl desc = new ServiceDescriptorImpl();
+				
 				desc.setServiceId(svc.getId());
-				desc.setBizCategory(svc.getBizCategory());
+				desc.setBizType(svc.getBizCategory());
 				desc.setName(svc.getName());
 				desc.setDisplayName(svc.getDisplayName());
 				desc.setDescription(svc.getDescription());
 				
 				desc.setFileName(fileName);
-				desc.setLatestEditor(lastEditor);
-				if (lastEditTime!=null){
-					desc.setLatestEditTime(lastEditTime);
-				}else{
-					desc.setLatestEditTime(new Date());
+				desc.setLastEditor(lastEditor);
+
+				
+				Object obj = properties.get(ServiceDescriptorProperty.PUBLISH_STATE);
+				Boolean publishState = Boolean.TRUE;
+				if (obj!=null && obj instanceof Boolean){
+					publishState = (Boolean) obj;
 				}
+				desc.setPublishState(publishState);
+				
 				
 				this.saveOrUpdate(desc);
+				
+				descriptors.add(desc);
 			}
 		}
-		return repository;
+		return descriptors;
 	}
 
-	private ServiceRepository repositoryFromInputStream(String serviceFileName,InputStream inStream){
+	private ServiceRepository repositoryFromInputStream(String serviceFileName,InputStream inStream)
+			throws InvalidModelException,DeserializerException{
 		ServiceRepositoryImpl repository = (ServiceRepositoryImpl)this.findServiceRepositoryByFileName(serviceFileName);
 		if (repository==null){
 			repository = new ServiceRepositoryImpl();
 		}
 		
-		Dom4JServiceParser parser = new Dom4JServiceParser();
 		try {
-			byte[] bytes = Utils.getBytes(inStream);
+			byte[] bytes = Utils.inputStream2ByteArray(inStream);
 			ByteArrayInputStream bytesIn = new ByteArrayInputStream(bytes);
-			List<Service> services = parser.parse(bytesIn);
+			
+			String charset = Utils.findXmlCharset(bytesIn);
+			
+			List<ServiceDef> services = ServiceParser.deserialize(bytesIn);
 			
 			
-			repository.setServiceContent(new String(bytes,"UTF-8"));
+			repository.setServiceContent(new String(bytes,charset));
 			repository.setFileName(serviceFileName);
 			repository.setServices(services);
+			//TODO repository.setServiceDescriptors(...);
+			
 			return repository;
-		} catch (ParserException e) {
-			log.error(e);
 		} catch (IOException e) {
-			log.error(e);
+			throw new DeserializerException(e);
 		}
-		return null;
 	}
 
 	/* (non-Javadoc)

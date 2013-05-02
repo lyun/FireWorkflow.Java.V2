@@ -20,11 +20,16 @@ import java.io.InputStream;
 
 import org.fireflow.engine.context.EngineModule;
 import org.fireflow.engine.context.RuntimeContextAware;
+import org.fireflow.engine.entity.repository.ProcessDescriptor;
 import org.fireflow.engine.entity.repository.ProcessKey;
 import org.fireflow.engine.entity.repository.ProcessRepository;
+import org.fireflow.engine.entity.runtime.ActivityInstance;
 import org.fireflow.model.InvalidModelException;
 import org.fireflow.model.binding.ResourceBinding;
 import org.fireflow.model.binding.ServiceBinding;
+import org.fireflow.model.data.Property;
+import org.fireflow.model.resourcedef.ResourceDef;
+import org.fireflow.model.servicedef.ServiceDef;
 
 /**
  * 流程定义服务。
@@ -32,16 +37,73 @@ import org.fireflow.model.binding.ServiceBinding;
  *
  */
 public interface ProcessUtil extends RuntimeContextAware,EngineModule {
+	/**
+	 * 返回流程的入口元素的Id，例如：FPDL20流程返回的是main_subflow的Id
+	 * @param workflowProcessId
+	 * @param version
+	 * @param processType
+	 * @return
+	 */
+	public String getProcessEntryId(String workflowProcessId, int version,String processType);
+	
 	public String serializeProcess2Xml(Object process) throws InvalidModelException;
 	
 	public Object deserializeXml2Process(InputStream inStream)throws InvalidModelException;
 	
 	public ProcessRepository serializeProcess2ProcessRepository(Object process)throws InvalidModelException;
+	
+	public ProcessDescriptor generateProcessDescriptor(Object process);
+	
+	/**
+	 * 获得ServiceBinding对象
+	 * @param activity 特定流程定义语言的Activity对象
+	 * @return
+	 * @throws InvalidModelException
+	 */
+    public ServiceBinding getServiceBinding(Object activity)throws InvalidModelException;
+    
+    /**
+     * 根据serviceBinding.getServiceId()和activity，找到ServiceDef对象
+     * @param activity
+     * @param serviceBinding
+     * @return
+     */
+    public ServiceDef getServiceDef(ActivityInstance activityInstance,Object activity,String serviceId);
+    
+    /**
+     * 根据resourceId和Activity获得resourceDef对象
+     * @param activityInstance
+     * @param activity
+     * @param resourceId
+     * @return
+     */
+    public ResourceDef getResourceDef(ActivityInstance activityInstance,Object activity,String resourceId);
+    /**
+     * 获得resource binding对象
+     * @param activity 特定流程定义语言的Activity对象
+     * @return
+     * @throws InvalidModelException
+     */
+    public ResourceBinding getResourceBinding(Object activity)throws InvalidModelException;
+    
+    /**
+     * 提取子流程或者Activity的流程变量（Property对象）。
+     * @param workflowDefinitionElement SubProcess 或者 Activity对象，由于Engine对流程定义语言的结构一无所知，所以需要交给特定流程定义语言的ProcessUtil工具类来返回Property对象。 
+     * @param propertyName property的名字
+     * @return
+     */
+    public Property getProperty(Object workflowDefinitionElement,String propertyName);
+    
+    /**
+     * 根据条件查找Activity
+     * @param processKey
+     * @param subflowId
+     * @param activityId
+     * @return
+     * @throws InvalidModelException
+     */
+    public Object findActivity(ProcessKey processKey,String subflowId, String activityId)throws InvalidModelException;
+    
 
-    public ServiceBinding getServiceBinding(ProcessKey processKey,String activityId)throws InvalidModelException;
-    
-    public ResourceBinding getResourceBinding(ProcessKey processKey,String activityId)throws InvalidModelException;
-    
-    public Object getActivity(ProcessKey processKey,String activityId)throws InvalidModelException;
-       
+    public Object findSubProcess(ProcessKey processKey,String subflowId )throws InvalidModelException;
 }

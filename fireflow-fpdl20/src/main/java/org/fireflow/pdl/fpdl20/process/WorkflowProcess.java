@@ -1,147 +1,204 @@
+/**
+ * Copyright 2007-2010 非也
+ * All rights reserved. 
+ * 
+ * This library is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License v3 as published by the Free Software
+ * Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along
+ * with this library; if not, see http://www.gnu.org/licenses/lgpl.html.
+ *
+ */
 package org.fireflow.pdl.fpdl20.process;
 
 import java.util.List;
 
-import org.fireflow.model.data.Property;
+import org.fireflow.model.ModelElement;
 import org.fireflow.model.misc.Duration;
 import org.fireflow.model.process.WorkflowElement;
-import org.fireflow.model.resourcedef.Resource;
-import org.fireflow.model.servicedef.Service;
-import org.fireflow.pdl.fpdl20.process.event.EventListenerDef;
+import org.fireflow.model.resourcedef.ResourceDef;
+import org.fireflow.model.servicedef.ServiceDef;
+import org.fireflow.pdl.fpdl20.diagram.Diagram;
 
 
 /**
- * 业务流程。<br/>
- * 这是Fire workflow工作流模型的最顶层元素。
- * <br/>
- * 从2.0版本中开始，这个类从org.fireflow.model.WorkflowProcess重构为
- * org.fireflow.model.process.Process。
+ * 业务过程。<br/>
+ * 这是Fire workflow 模型的最顶层元素，一个业务过程可以包含多个工作流程，也可以调用外部的业务过程。
  * <br/>
  * @author 非也,nychen2000@163.com
  * 
  */
-public interface WorkflowProcess extends WorkflowElement{
+public interface WorkflowProcess extends ModelElement{
+	
+	public static final String MAIN_PROCESS_NAME="main";
+	
+	/**
+	 * 返回业务过程的运行时间，业务过程的duration等于main_flow的duration
+	 * @return
+	 */
 	public Duration getDuration();
-	public void setDuration(Duration du);
-	/**
-	 * 获得流程变量声明列表
-	 * @return
-	 */
-	public List<Property> getProperties();
-
-	
-	/**
-	 * 
-	 * 流程的入口节点
-	 * @return
-	 */
-	public Node getEntry();
-	
-	public void setEntry(Node start);
-	
-	/**
-	 * 获得所有的开始节点
-	 * @return
-	 */
-	public List<StartNode> getStartNodes();
-	public StartNode getStartNode(String startNodeId);
-
-	
-	/**
-	 * 获得流程图中的所有的活动
-	 * @return
-	 */
-	public List<Activity> getActivities();
-	public Activity getActivity(String activityId);
-
-	
-	/**
-	 * 获得所有的路由节点
-	 * @return
-	 */
-	public List<Router> getRouters();
-	public Router getRouter(String routerId);
-
-	
-	/**
-	 * 所有的结束节点
-	 * @return
-	 */
-	public List<EndNode> getEndNodes();
-	public EndNode getEndNode(String endNodeId);
-
-	/**
-	 * 所有的转移
-	 * @return
-	 */
-	public List<Transition> getTransitions();
-	public Transition getTransition(String transitionId);
 	
 	
 	/**
-	 * 获得该流程作用域内的所有的Service
-	 * @return
-	 */
-	public List<Service> getServices();
-	public Service getService(String serviceId);
-	/**
-	 * 获得本流程局部的Service
-	 * @return
-	 */
-	public List<Service> getLocalServices();
-	/**
-	 * 获得该流程作用域内的所有的资源定义。
-	 * @return
-	 */
-	public List<Resource> getResources();
-	public Resource getResource(String resourceId);
-	/**
-	 * 获得本流程局部的Resource
-	 * @return
-	 */
-	public List<Resource> getLocalResources();
-
-	
-	public ProcessImport getProcessImportByLocation(String location);
-	
-	/**
-	 * 服务import列表
-	 * @return
-	 */
-	public List<ProcessImport<Service>> getProcessImportForServices();
-	
-	/**
-	 * 资源import列表
-	 * @return
-	 */
-	public List<ProcessImport<Resource>> getProcessImportForResources();
-	
-	/**
-	 * 业务类别
+	 * 返回该流程所述的业务类别，业务类别字段用于流程管理目的，可将流程按照业务类别进行显示
 	 * @return
 	 */
 	public String getBizCategory();
 	
-	public WorkflowElement findWFElementById(String id);
-
-	//**************************************************************
-	//**************************************************************
-	//*************  服务接入或者服务输出****************************
-	//**************************************************************
-	//**************************************************************
+	public void setBizCategory(String bizCategory);
 	
 	/**
-	 * 本活动所引用的服务
-	 * TODO 待研究，2011-02-05
+	 * 流程定义文件在classpath中的位置
+	 * 该属性放在WorkflowProcess中不合理，2012-04-29
 	 * @return
 	 */
-//	public ServiceBinding getServiceRef();
-	
-//	public void setServiceRef(ServiceBinding serviceRef) ;
+//	public String getClasspathUri();
+//	
+//	public void setClasspathUri(String classPathUri);
 	
 	/**
-	 * 事件监听器接入点
+	 * 根据WorkflowElmentId查找对应的Workflow Element; 
+	 * Workflow Element可以是subprocess,StartNode,Activity,EndNode,Router,Transition。
+	 * @param workflowElementRef
+	 * @return
 	 */
-	public List<EventListenerDef> getEventListeners();
+	public WorkflowElement findWorkflowElementById(String workflowElementId);
 	
+	/**
+	 * 找到指定元素的后继Activity列表
+	 * @param elementId
+	 * @return
+	 */
+	public List<Activity> findNextActivities(String elementId);
+	
+	
+	/**
+	 * 返回主流程的流程Id
+	 * @return
+	 */
+	public SubProcess getMainSubProcess();
+	
+	/**
+	 * 根据subprocessId 返回subprocess
+	 * @param subProcessId
+	 * @return
+	 */
+	public SubProcess getLocalSubProcess(String subProcessId);
+	
+	
+	/**
+	 * 向WorkflowProcess中增加一个subprocess
+	 * @param subProcess
+	 */
+	public void addSubProcess(SubProcess subProcess);
+	
+	/**
+	 * 删除子过程
+	 * @param subProcessId
+	 */
+	public void deleteSubProcess(String subProcessId);
+	
+	/**
+	 * 获得流程所有的subprocesss，包括引入的外部流程的main_flow
+	 * 暂不启用对WorkflowProcess的引用，因为容易发生循环引用，导致死锁
+	 * @return
+	 */
+//	public List<SubProcess> getsubprocesses();
+	
+	/**
+	 * 获得本WorkflowProcess内部定义的所有subprocess
+	 * @return
+	 */
+	public List<SubProcess> getLocalSubProcesses();
+	
+
+	
+	/**
+	 * 获得所有的Service，包括import进来的
+	 * @return
+	 */
+	public List<ServiceDef> getServices();
+	
+	/**
+	 * 获得在本WorkflowProcess定义的所有Service。
+	 * @return
+	 */
+	public List<ServiceDef> getLocalServices();
+	
+	public ServiceDef getService(String serviceId);
+	
+	/**
+	 * 定义一个局部Service到本业务流程
+	 * @param svc
+	 */
+	public void addService(ServiceDef svc);
+	
+	public void deleteService(ServiceDef svc);
+	
+	/**
+	 * 获得该流程所有的资源定义，包括import进来的。
+	 * @return
+	 */
+	public List<ResourceDef> getResources();
+	
+	public List<ResourceDef> getLocalResources();
+	
+	public ResourceDef getResource(String resourceId);
+	/**
+	 * 定义一个局部的resource到本业务流程
+	 * @param resource
+	 */
+	public void addResource(ResourceDef resource);
+
+	public void deleteResource(ResourceDef resource);
+	
+	/**
+	 * 根据location值获得Import对象
+	 * @param location
+	 * @return
+	 */
+	public Import getImportByLocation(String location);
+	
+	/**
+	 * 服务servicedef import列表
+	 * @return
+	 */
+	public List<Import<ServiceDef>> getImportsForService();
+	
+	public void addServiceImport(Import<ServiceDef> svcImport);
+	
+	/**
+	 * 资源resourcedef import列表
+	 * @return
+	 */
+	public List<Import<ResourceDef>> getImportsForResource();
+	
+	public void addResourceImport(Import<ResourceDef> rscImport);
+	/**
+	 * 获得workflowprocess import 列表
+	 * @return
+	 */
+	public List<Import<WorkflowProcess>> getImportsForProcess();
+	
+	
+	public void addProcessImport(Import<WorkflowProcess> processImport);
+	
+	/**
+	 * 流程的namespace
+	 * 2012-02-26，该属性放在service定义里面
+	 * @return
+	 */
+//	public String getTargetNamespace();
+	
+	public List<Diagram> getDiagrams();
+	
+	public void deleteDiagram(String subprocessId);
+	public void addDiagram(Diagram diagram);
+	public Diagram getDiagramBySubProcessId(String subProcessId);
 }

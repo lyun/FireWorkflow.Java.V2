@@ -25,7 +25,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.fireflow.engine.WorkflowQuery;
+import org.fireflow.client.WorkflowQuery;
 import org.fireflow.engine.entity.WorkflowEntity;
 import org.fireflow.engine.entity.repository.ServiceDescriptor;
 import org.fireflow.engine.entity.repository.ServiceDescriptorProperty;
@@ -33,12 +33,13 @@ import org.fireflow.engine.entity.repository.ServiceRepository;
 import org.fireflow.engine.entity.repository.impl.ServiceDescriptorImpl;
 import org.fireflow.engine.entity.repository.impl.ServiceRepositoryImpl;
 import org.fireflow.engine.exception.EngineException;
-import org.fireflow.engine.misc.Utils;
 import org.fireflow.engine.modules.persistence.PersistenceService;
 import org.fireflow.engine.modules.persistence.ServicePersister;
-import org.fireflow.model.io.Dom4JServiceParser;
-import org.fireflow.model.io.ParserException;
-import org.fireflow.model.servicedef.Service;
+import org.fireflow.misc.Utils;
+import org.fireflow.model.InvalidModelException;
+import org.fireflow.model.io.DeserializerException;
+import org.fireflow.model.io.service.ServiceParser;
+import org.fireflow.model.servicedef.ServiceDef;
 
 /**
  * 
@@ -54,7 +55,7 @@ public class ServicePersisterClassPathImpl implements ServicePersister {
 	 * @see org.fireflow.engine.modules.persistence.ServicePersister#findServiceRepositoryByFileName(java.lang.String)
 	 */
 	public ServiceRepository findServiceRepositoryByFileName(
-			String serviceFileName) throws ParserException{
+			String serviceFileName) throws DeserializerException{
 		if (serviceFileName==null || serviceFileName.trim().equals("")){
 			throw new EngineException("The resource file name can NOT be empty!");
 		}
@@ -66,26 +67,29 @@ public class ServicePersisterClassPathImpl implements ServicePersister {
 		InputStream inStream = this.getClass().getClassLoader().getResourceAsStream(fileName);				
 		return repositoryFromInputStream(serviceFileName,inStream);
 	}
-	private ServiceRepository repositoryFromInputStream(String serviceFileName,InputStream inStream)throws ParserException{
-		Dom4JServiceParser parser = new Dom4JServiceParser();
+	private ServiceRepository repositoryFromInputStream(String serviceFileName,InputStream inStream)throws DeserializerException{
+
 		try {
 			
-			byte[] bytes = Utils.getBytes(inStream);
+			byte[] bytes = Utils.inputStream2ByteArray(inStream);
 			ByteArrayInputStream bytesIn = new ByteArrayInputStream(bytes);
-			List<Service> services = parser.parse(bytesIn);
+			
+			String charset = Utils.findXmlCharset(bytesIn);
+			
+			List<ServiceDef> services = ServiceParser.deserialize(bytesIn);
 			
 			ServiceRepositoryImpl repository = new ServiceRepositoryImpl();
-			repository.setServiceContent(new String(bytes,"UTF-8"));
+			repository.setServiceContent(new String(bytes,charset));
 			repository.setFileName(serviceFileName);
 			repository.setServices(services);
 			
 			
 			if (services!=null){
 				List<ServiceDescriptor> serviceDescriptors = new ArrayList<ServiceDescriptor>();
-				for (Service svc : services){
+				for (ServiceDef svc : services){
 					ServiceDescriptorImpl desc = new ServiceDescriptorImpl();
 					desc.setServiceId(svc.getId());
-					desc.setBizCategory(svc.getBizCategory());
+					desc.setBizType(svc.getBizCategory());
 					desc.setName(svc.getName());
 					desc.setDisplayName(svc.getDisplayName());
 					desc.setDescription(svc.getDescription());
@@ -94,15 +98,20 @@ public class ServicePersisterClassPathImpl implements ServicePersister {
 					
 					serviceDescriptors.add(desc);
 				}
+				
+				repository.setServiceDescriptors(serviceDescriptors);
 			}
 			
 			return repository;
-		} catch (ParserException e) {
+		} catch (DeserializerException e) {
 			log.error(e);
 			throw e;
 		} catch (IOException e) {
 			log.error(e);
-			throw new ParserException(e);
+			throw new DeserializerException(e);
+		} catch (InvalidModelException e) {
+			log.error(e);
+			throw new DeserializerException(e);
 		}
 	}
 	
@@ -110,7 +119,7 @@ public class ServicePersisterClassPathImpl implements ServicePersister {
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.modules.persistence.ServicePersister#persistServiceFileToRepository(java.io.InputStream, java.util.Map)
 	 */
-	public ServiceRepository persistServiceFileToRepository(
+	public List<ServiceDescriptor> persistServiceFileToRepository(
 			InputStream serviceFileInput,
 			Map<ServiceDescriptorProperty, Object> properties) {
 		throw new UnsupportedOperationException("This method is unsupported");

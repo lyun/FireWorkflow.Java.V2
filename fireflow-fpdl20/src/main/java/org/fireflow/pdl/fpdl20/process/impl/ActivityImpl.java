@@ -19,14 +19,17 @@ package org.fireflow.pdl.fpdl20.process.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.fireflow.model.binding.ResourceBinding;
 import org.fireflow.model.binding.ServiceBinding;
 import org.fireflow.model.data.Property;
 import org.fireflow.model.misc.Duration;
 import org.fireflow.pdl.fpdl20.misc.LoopStrategy;
 import org.fireflow.pdl.fpdl20.process.Activity;
+import org.fireflow.pdl.fpdl20.process.Node;
 import org.fireflow.pdl.fpdl20.process.StartNode;
-import org.fireflow.pdl.fpdl20.process.WorkflowProcess;
+import org.fireflow.pdl.fpdl20.process.SubProcess;
+import org.fireflow.pdl.fpdl20.process.Transition;
 import org.fireflow.pdl.fpdl20.process.event.EventListenerDef;
 
 
@@ -50,10 +53,16 @@ public class ActivityImpl extends NodeImpl implements Activity{
 	 */
 	private List<EventListenerDef> eventListenerDefs = new ArrayList<EventListenerDef>();
 	
+	private List<EventListenerDef> workItemEventListenerDefs = new ArrayList<EventListenerDef>();
+	
 	private LoopStrategy loopStrategy = LoopStrategy.REDO;
 	
-    public ActivityImpl(WorkflowProcess workflowProcess, String name) {
-        super(workflowProcess, name);
+	public ActivityImpl(){
+		super();
+	}
+	
+    public ActivityImpl(SubProcess subflow, String name) {
+        super(subflow, name);
     }
 	
 	public ServiceBinding getServiceBinding() {
@@ -67,7 +76,9 @@ public class ActivityImpl extends NodeImpl implements Activity{
 	public List<EventListenerDef> getEventListeners() {
 		return eventListenerDefs;
 	}
-
+	public List<EventListenerDef> getWorkItemEventListeners(){
+		return this.workItemEventListenerDefs;
+	}
 	public List<Property> getProperties() {
 		return properties;
 	}
@@ -130,5 +141,13 @@ public class ActivityImpl extends NodeImpl implements Activity{
 		this.loopStrategy = loopStrategy;
 	}
 	
-	
+	public Property getProperty(String name) {
+		if (StringUtils.isEmpty(name))return null;
+		for (Property prop : properties){
+			if (name.equals(prop.getName())){
+				return prop;
+			}
+		}
+		return null;
+	}
 }

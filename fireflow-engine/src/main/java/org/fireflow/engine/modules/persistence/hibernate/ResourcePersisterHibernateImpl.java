@@ -21,28 +21,25 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.fireflow.engine.entity.repository.ResourceDescriptor;
 import org.fireflow.engine.entity.repository.ResourceDescriptorProperty;
 import org.fireflow.engine.entity.repository.ResourceRepository;
-import org.fireflow.engine.entity.repository.ServiceDescriptorProperty;
-import org.fireflow.engine.entity.repository.ServiceRepository;
 import org.fireflow.engine.entity.repository.impl.ResourceDescriptorImpl;
 import org.fireflow.engine.entity.repository.impl.ResourceRepositoryImpl;
-import org.fireflow.engine.entity.repository.impl.ServiceDescriptorImpl;
-import org.fireflow.engine.entity.repository.impl.ServiceRepositoryImpl;
 import org.fireflow.engine.exception.EngineException;
-import org.fireflow.engine.misc.Utils;
 import org.fireflow.engine.modules.persistence.ResourcePersister;
-import org.fireflow.model.io.Dom4JResourceParser;
-import org.fireflow.model.io.Dom4JServiceParser;
-import org.fireflow.model.io.ParserException;
-import org.fireflow.model.resourcedef.Resource;
-import org.fireflow.model.servicedef.Service;
+import org.fireflow.misc.Utils;
+import org.fireflow.model.InvalidModelException;
+import org.fireflow.model.io.DeserializerException;
+import org.fireflow.model.io.resource.ResourceDeserializer;
+import org.fireflow.model.resourcedef.ResourceDef;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -79,15 +76,17 @@ public class ResourcePersisterHibernateImpl extends AbsPersisterHibernateImpl im
 		if (result!=null && 
 				result.getResourceContent()!=null){
 			try {
-				ByteArrayInputStream byteIn = new ByteArrayInputStream(result.getResourceContent().getBytes("UTF-8"));
+				String content = result.getResourceContent();
+				String charset = Utils.findXmlCharset(content);
+				ByteArrayInputStream byteIn = new ByteArrayInputStream(content.getBytes(charset));
 				
-				Dom4JResourceParser parser = new Dom4JResourceParser();
-				List<Resource> resources = parser.parse(byteIn);
+				ResourceDeserializer parser = new ResourceDeserializer();
+				List<ResourceDef> resources = parser.deserialize(byteIn);
 				
 				((ResourceRepositoryImpl)result).setResources(resources);
 			} catch (UnsupportedEncodingException e) {
 				log.error(e);
-			}catch(ParserException e){
+			}catch(DeserializerException e){
 				log.error(e);
 			}
 			catch(IOException e){
@@ -101,13 +100,13 @@ public class ResourcePersisterHibernateImpl extends AbsPersisterHibernateImpl im
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.modules.persistence.ResourcePersister#persistResourceFileToRepository(java.io.InputStream, java.util.Map)
 	 */
-	public ResourceRepository persistResourceFileToRepository(
+	public List<ResourceDescriptor> persistResourceFileToRepository(
 			InputStream resourceFileInput,
-			Map<ResourceDescriptorProperty, Object> properties) {
+			Map<ResourceDescriptorProperty, Object> properties)throws DeserializerException,InvalidModelException {
 		if (properties==null) throw new EngineException("The resource descriptor properties can NOT be emtpy!");
 		final String fileName = (String)properties.get(ResourceDescriptorProperty.FILE_NAME);
-		String lastEditor = (String)properties.get(ResourceDescriptorProperty.LATEST_EDITOR);
-		Date lastEditTime = (Date)properties.get(ResourceDescriptorProperty.LATEST_EDIT_TIME);
+		String lastEditor = (String)properties.get(ResourceDescriptorProperty.LAST_EDITOR);
+		Date lastEditTime = (Date)properties.get(ResourceDescriptorProperty.LAST_EDIT_TIME);
 		
 		if (fileName==null || fileName.trim().equals("")){
 			throw new EngineException("The FILE_NAME property can NOT be emtpy!");
@@ -132,9 +131,10 @@ public class ResourcePersisterHibernateImpl extends AbsPersisterHibernateImpl im
 		});
 		
 		
-		List<Resource> services = repository.getResources();
+		List<ResourceDef> services = repository.getResources();
+		List<ResourceDescriptor> descriptors = new ArrayList<ResourceDescriptor>();
 		if (services!=null){
-			for (Resource rsc : services){
+			for (ResourceDef rsc : services){
 				ResourceDescriptorImpl desc = new ResourceDescriptorImpl();
 				desc.setResourceId(rsc.getId());
 				desc.setName(rsc.getName());
@@ -143,19 +143,23 @@ public class ResourcePersisterHibernateImpl extends AbsPersisterHibernateImpl im
 				desc.setResourceType(rsc.getResourceType().getValue());
 				
 				desc.setFileName(fileName);
-				desc.setLatestEditor(lastEditor);
-				if (lastEditTime!=null){
-					desc.setLatestEditTime(lastEditTime);
-				}else{
-					desc.setLatestEditTime(new Date());
+				desc.setLastEditor(lastEditor);
+				
+				Object obj = properties.get(ResourceDescriptorProperty.PUBLISH_STATE);
+				Boolean publishState = Boolean.TRUE;
+				if (obj!=null && obj instanceof Boolean){
+					publishState = (Boolean) obj;
 				}
+				desc.setPublishState(publishState);
+				
 				
 				this.saveOrUpdate(desc);
+				descriptors.add(desc);
 			}
 		}
-		return repository;
+		return descriptors;
 	}
-	private ResourceRepository repositoryFromInputStream(String resourceFileName,InputStream inStream){
+	private ResourceRepository repositoryFromInputStream(String resourceFileName,InputStream inStream)throws DeserializerException,InvalidModelException{
 		
 		ResourceRepositoryImpl repository = (ResourceRepositoryImpl)this.findResourceRepositoryByFileName(resourceFileName);
 		if (repository==null){
@@ -163,23 +167,25 @@ public class ResourcePersisterHibernateImpl extends AbsPersisterHibernateImpl im
 		}
 			
 		
-		Dom4JResourceParser parser = new Dom4JResourceParser();
+		ResourceDeserializer parser = new ResourceDeserializer();
 		try {
-			byte[] bytes = Utils.getBytes(inStream);
+			byte[] bytes = Utils.inputStream2ByteArray(inStream);
 			ByteArrayInputStream bytesIn = new ByteArrayInputStream(bytes);
-			List<Resource> resources = parser.parse(bytesIn);
 			
+			String charset = Utils.findXmlCharset(bytesIn);
 			
-			repository.setResourceContent(new String(bytes,"UTF-8"));
+			List<ResourceDef> resources = parser.deserialize(bytesIn);
+			
+			repository.setResourceContent(new String(bytes,charset));
 			repository.setFileName(resourceFileName);
 			repository.setResources(resources);
+			
+			//TODO repository.setResourceDescriptors(descriptors)
+			
 			return repository;
-		} catch (ParserException e) {
-			log.error(e);
 		} catch (IOException e) {
-			log.error(e);
+			throw new InvalidModelException(e);
 		}
-		return null;
 	}
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.modules.persistence.hibernate.AbsPersisterHibernateImpl#getEntityClass4Runtime(java.lang.Class)

@@ -18,26 +18,25 @@ package org.fireflow.engine.resource.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.fireflow.engine.WorkflowSession;
+import org.fireflow.client.WorkflowSession;
+import org.fireflow.client.impl.WorkflowSessionLocalImpl;
 import org.fireflow.engine.context.RuntimeContext;
 import org.fireflow.engine.entity.runtime.ActivityInstance;
 import org.fireflow.engine.entity.runtime.ProcessInstance;
 import org.fireflow.engine.entity.runtime.WorkItem;
 import org.fireflow.engine.entity.runtime.WorkItemState;
-import org.fireflow.engine.impl.WorkflowSessionLocalImpl;
-import org.fireflow.engine.modules.ousystem.OUSystemAdapter;
+import org.fireflow.engine.modules.ousystem.OUSystemConnector;
 import org.fireflow.engine.modules.ousystem.User;
 import org.fireflow.engine.modules.ousystem.impl.UserImpl;
 import org.fireflow.engine.modules.persistence.ActivityInstancePersister;
 import org.fireflow.engine.modules.persistence.PersistenceService;
 import org.fireflow.engine.modules.persistence.WorkItemPersister;
 import org.fireflow.engine.resource.ResourceResolver;
-import org.fireflow.model.resourcedef.Resource;
+import org.fireflow.model.resourcedef.ResourceDef;
 
 /**
  * 
@@ -45,24 +44,24 @@ import org.fireflow.model.resourcedef.Resource;
  * @author 非也
  * @version 2.0
  */
-public class ActivityInstancePerformerResolver implements ResourceResolver {
+public class ActivityInstancePerformerResolver extends ResourceResolver {
 	private static Log log = LogFactory.getLog(ActivityInstancePerformerResolver.class);
 	public static final String REFERENCED_ACTIVITY_ID = "referencedActivityId";
 	
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.resource.ResourceResolver#resolve(org.fireflow.engine.WorkflowSession, org.fireflow.model.resourcedef.Resource, java.util.Map)
 	 */
-	public List<User> resolve(WorkflowSession session, Resource resource,
-			Map<String, Object> parameterValues) {
+	public List<User> resolve(WorkflowSession session, ProcessInstance currentProcessInstance,
+			ActivityInstance currentActivityInstance, ResourceDef resource) {
 		List<User> users = new ArrayList<User>();
-		
-		ProcessInstance processInstance = session.getCurrentProcessInstance();
+		WorkflowSessionLocalImpl localSession = (WorkflowSessionLocalImpl)session;
+		ProcessInstance processInstance = localSession.getCurrentProcessInstance();
 		if (processInstance==null){
 			log.error("Current process instance is null,can NOT retrieve the actors");
 			return users;
 		}
 		
-		String referencedActivityId = parameterValues==null?null:(String)parameterValues.get(REFERENCED_ACTIVITY_ID);
+		String referencedActivityId = resource.getValue();
 		
 		if (referencedActivityId==null || referencedActivityId.trim().equals("")){
 			log.error("The parameter value of 'referencedActivityId' is null,can NOT retrieve the actors");
@@ -92,17 +91,17 @@ public class ActivityInstancePerformerResolver implements ResourceResolver {
 			log.warn("Can NOT find work items for [activityId='"+referencedActivityId+"' , processInstanceId='"+processInstance.getId()+"']");
 			return users;
 		}
-		OUSystemAdapter ouSystemAdapter = rtCtx.getEngineModule(OUSystemAdapter.class, processInstance.getProcessType());
+		OUSystemConnector ouSystemAdapter = rtCtx.getEngineModule(OUSystemConnector.class, processInstance.getProcessType());
 		
 		for (WorkItem wi : workItemList){
 			if (wi.getState().equals(WorkItemState.COMPLETED)){
 //				User u = ouSystemAdapter.findUserById(wi.getUserId());
 				UserImpl u = new UserImpl();
 				Properties props = new Properties();
-				props.put(User.ID, processInstance.getCreatorId());
-				props.put(User.NAME, processInstance.getCreatorName());
-				props.put(User.DEPT_ID, processInstance.getCreatorDeptId());
-				props.put(User.DEPT_NAME, processInstance.getCreatorDeptName());
+				u.setId(processInstance.getCreatorId());
+				u.setName(processInstance.getCreatorName());
+				u.setDeptId(processInstance.getCreatorDeptId());
+				u.setDeptName(processInstance.getCreatorDeptName());
 				u.setProperties(props);
 				users.add(u);
 			}

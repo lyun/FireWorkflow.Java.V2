@@ -18,7 +18,7 @@ package org.fireflow.engine.entity.runtime;
 
 import java.util.Date;
 
-import org.fireflow.engine.WorkflowSession;
+import org.fireflow.client.WorkflowSession;
 import org.fireflow.engine.entity.WorkflowEntity;
 import org.fireflow.engine.exception.EngineException;
 import org.fireflow.engine.exception.InvalidOperationException;
@@ -40,13 +40,6 @@ public interface ActivityInstance extends Scope,WorkflowEntity{
 	////////////////////////////////////////////////////////////////
 
 	/**
-	 * 返回活动实例的Id
-	 * 
-	 * @return
-	 */
-	public String getId();
-
-	/**
 	 * 获得整个流程的业务单据Id
 	 * @return
 	 */
@@ -57,6 +50,24 @@ public interface ActivityInstance extends Scope,WorkflowEntity{
 	 * @return
 	 */
 	public String getSubBizId();
+	
+	/**
+	 * 流程实例创建者（业务发起者）的Id，冗余该字段便于查询
+	 * @return
+	 */
+	public String getProcInstCreatorId();
+	
+	/**
+	 * 流程实例创建者（业务发起者）的名字，冗余该字段便于查询
+	 * @return
+	 */
+	public String getProcInstCreatorName();
+	
+	/**
+	 * 流程实例创建时间，冗余该字段便于查询
+	 * @return
+	 */
+	public Date getProcInstCreatedTime();
 
 	/**
 	 * 返回任务Name
@@ -144,15 +155,35 @@ public interface ActivityInstance extends Scope,WorkflowEntity{
 
 	public String getProcessType();
 	
+    /**
+     * 获得当前实例对应的subflow，对于没有subflow的模型，该值等于processId。
+     * @return
+     */
+    public String getSubProcessId();
+	
+    
+    /**
+     * processName
+     * @return
+     */
 	public String getProcessName();
 	
+	/**
+	 * processDisplayName
+	 * @return
+	 */
 	public String getProcessDisplayName();
+	
+	
+	public String getSubProcessName();
+	
+	public String getSubProcessDisplayName();
 	
 	/**
 	 * 增加业务类别字段，便于查询。2011-04-02
 	 * @return
 	 */
-	public String getBizCategory();
+	public String getBizType();
 	/**
 	 * 对应的流程节点的Id
 	 * 
@@ -167,10 +198,12 @@ public interface ActivityInstance extends Scope,WorkflowEntity{
 	 */
 	public String getServiceId();
 	
+	public String getServiceVersion();
+	
 	/**
 	 * 返回服务类型，取值为org.fireflow.model.Task.FORM,org.fireflow.model.Task.TOOL,
 	 * org.fireflow.model.Task.SUBFLOW或者org.fireflow.model.Task.DUMMY
-	 * 
+	 * @deprecated
 	 * @return
 	 */
 	public String getServiceType();
@@ -189,7 +222,8 @@ public interface ActivityInstance extends Scope,WorkflowEntity{
 	public String getNote();
 	
 	public String getTokenId();
-	
+
+    
 	/////////////////////////////////////////////////////////////////
 	/////////          获得关联的其他对象           /////////////////////////
 	////////////////////////////////////////////////////////////////
@@ -225,7 +259,7 @@ public interface ActivityInstance extends Scope,WorkflowEntity{
 	 * 
 	 * @throws org.fireflow.engine.exception.EngineException
 	 */
-	public void suspend(WorkflowSession session) throws InvalidOperationException;
+//	public void suspend(WorkflowSession session) throws InvalidOperationException;
 
 
 
@@ -234,7 +268,7 @@ public interface ActivityInstance extends Scope,WorkflowEntity{
 	 * 
 	 * @throws org.fireflow.engine.exception.EngineException
 	 */
-	public void restore(WorkflowSession session) throws InvalidOperationException;
+//	public void restore(WorkflowSession session) throws InvalidOperationException;
 
 	/**
 	 * 将该TaskInstance中止，并且触发ProcessInstance的abort操作。
@@ -243,7 +277,7 @@ public interface ActivityInstance extends Scope,WorkflowEntity{
 	 * 如果该TaskInstance的状态已经是Completed或者Canceled，则抛出异常。</br>
 	 * @throws EngineException
 	 */
-	public void abort(WorkflowSession session)  throws InvalidOperationException;
+//	public void abort(WorkflowSession session)  throws InvalidOperationException;
 	
 	/**
 	 * 将该TaskInstance中止，并流转到下一个活动节点。</br>
@@ -253,7 +287,7 @@ public interface ActivityInstance extends Scope,WorkflowEntity{
 	 * @throws EngineException
 	 * @throws KernelException
 	 */
-	public void skipOver(WorkflowSession session) throws EngineException,KernelException;
+//	public void skipOver(WorkflowSession session) throws EngineException,KernelException;
 		
 	/**
 	 * 将该TaskInstance中止，并且使得当前流程实例跳转到targetActivityId指定的环节。</br>
@@ -263,7 +297,7 @@ public interface ActivityInstance extends Scope,WorkflowEntity{
 	 * @throws EngineException
 	 * @throws KernelException
 	 */
-	public void skipOver(WorkflowSession session,String targetActivityId) throws EngineException,KernelException;
+//	public void skipOver(WorkflowSession session,String targetActivityId) throws EngineException,KernelException;
 	
 	/**
 	 * 将该TaskInstance中止，并且使得当前流程实例跳转到targetActivityId指定的环节。该环节任务的操作人从dynamicAssignmentHandler获取。</br>

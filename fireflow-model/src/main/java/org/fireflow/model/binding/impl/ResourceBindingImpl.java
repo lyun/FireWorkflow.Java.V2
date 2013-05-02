@@ -19,9 +19,8 @@ package org.fireflow.model.binding.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.fireflow.model.binding.AssignmentStrategy;
 import org.fireflow.model.binding.ResourceBinding;
-import org.fireflow.model.binding.ResourceRef;
+import org.fireflow.model.resourcedef.WorkItemAssignmentStrategy;
 
 /**
  * 
@@ -30,23 +29,26 @@ import org.fireflow.model.binding.ResourceRef;
  * @version 2.0
  */
 public class ResourceBindingImpl implements ResourceBinding {
+	private static final String DEFAULT_ASSIGNMENT_HANDLER_CLASS_NAME= "org.fireflow.engine.invocation.impl.DefaultAssignmentHandler";
 	private String name = null;
-	private AssignmentStrategy assignmentStrategy = AssignmentStrategy.ASSIGN_TO_ANY;
-	private List<ResourceRef> administrators = new ArrayList<ResourceRef>();
-	private List<ResourceRef> readers = new ArrayList<ResourceRef>();
-	private List<ResourceRef> potentialOwners = new ArrayList<ResourceRef>();
+	private WorkItemAssignmentStrategy assignmentStrategy = WorkItemAssignmentStrategy.ASSIGN_TO_ANY;
+	private List<String> administrators = new ArrayList<String>();
+	private List<String> readers = new ArrayList<String>();
+	private List<String> potentialOwners = new ArrayList<String>();
+	private String assignmentHandlerBeanName = null;
+	private String assignmentHandlerClassName = DEFAULT_ASSIGNMENT_HANDLER_CLASS_NAME;
 	
 	/* (non-Javadoc)
 	 * @see org.fireflow.model.binding.ResourceBinding#getAdministrators()
 	 */
-	public List<ResourceRef> getAdministrators() {
+	public List<String> getAdministratorRefs() {
 		return administrators;
 	}
 	/* (non-Javadoc)
 	 * @see org.fireflow.model.binding.ResourceBinding#setAdministrators(java.util.List)
 	 */
-	public void setAdministrators(List<ResourceRef> administrators){
-		this.administrators = administrators;
+	public void addAdministratorRef(String resourceDefId){
+		this.administrators.add(resourceDefId);
 	}
 
 	/* (non-Javadoc)
@@ -63,14 +65,14 @@ public class ResourceBindingImpl implements ResourceBinding {
 	/* (non-Javadoc)
 	 * @see org.fireflow.model.binding.ResourceBinding#getPotentialOwners()
 	 */
-	public List<ResourceRef> getPotentialOwners() {
+	public List<String> getPotentialOwnerRefs() {
 		return this.potentialOwners;
 	}
 
 	/* (non-Javadoc)
 	 * @see org.fireflow.model.binding.ResourceBinding#getReaders()
 	 */
-	public List<ResourceRef> getReaders() {
+	public List<String> getReaderRefs() {
 		return this.readers;
 	}
 
@@ -78,29 +80,46 @@ public class ResourceBindingImpl implements ResourceBinding {
 	/* (non-Javadoc)
 	 * @see org.fireflow.model.binding.ResourceBinding#setPotentialOwners(java.util.List)
 	 */
-	public void setPotentialOwners(List<ResourceRef> potentialOwners) {
-		this.potentialOwners = potentialOwners;
-
+	public void addPotentialOwnerRef(String resourceId) {
+		this.potentialOwners.add(resourceId);
 	}
 
 	/* (non-Javadoc)
 	 * @see org.fireflow.model.binding.ResourceBinding#setReaders(java.util.List)
 	 */
-	public void setReaders(List<ResourceRef> readers) {
-		this.readers = readers;
+	public void addReaderRef(String resourceId) {
+		this.readers.add(resourceId);
 
 	}
 	/**
 	 * @return the assignmentStrategy
 	 */
-	public AssignmentStrategy getAssignmentStrategy() {
+	public WorkItemAssignmentStrategy getAssignmentStrategy() {
 		return assignmentStrategy;
 	}
 	/**
 	 * @param assignmentStrategy the assignmentStrategy to set
 	 */
-	public void setAssignmentStrategy(AssignmentStrategy assignmentStrategy) {
+	public void setAssignmentStrategy(WorkItemAssignmentStrategy assignmentStrategy) {
 		this.assignmentStrategy = assignmentStrategy;
+	}
+	public String getAssignmentHandlerClassName() {
+		return assignmentHandlerClassName;
+	}
+	public String getAssignmentHandlerBeanName() {
+		return assignmentHandlerBeanName;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public void setAssignmentHandlerBeanName(String assignmentHandlerBeanName) {
+		this.assignmentHandlerBeanName = assignmentHandlerBeanName;
+	}
+	public void setAssignmentHandlerClassName(String assignmentHandlerClassName) {
+		this.assignmentHandlerClassName = assignmentHandlerClassName;
 	}
 
 }

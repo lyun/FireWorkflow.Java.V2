@@ -25,10 +25,10 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.script.SimpleScriptContext;
 
-import org.fireflow.engine.WorkflowSession;
+import org.fireflow.client.WorkflowSession;
+import org.fireflow.client.impl.WorkflowSessionLocalImpl;
 import org.fireflow.engine.context.RuntimeContext;
-import org.fireflow.engine.impl.WorkflowSessionLocalImpl;
-import org.fireflow.engine.misc.Utils;
+import org.fireflow.engine.modules.script.ScriptEngineHelper;
 import org.fireflow.model.data.Expression;
 import org.fireflow.model.data.impl.ExpressionImpl;
 import org.fireflow.pdl.bpel.BpelActivity;
@@ -110,12 +110,10 @@ public class If extends StructureActivity {
 //		Map<String,Object> fireflowVariableContext = new HashMap<String,Object>();
 //		fireflowVariableContext.putAll(varValues);
 //		fireflowVariableContext.putAll("<系统常量>");		
-		Map<String,Object> fireflowVariableContext = Utils.fulfillScriptContext(session, 
-				session.getCurrentProcessInstance(),
-				session.getCurrentActivityInstance());
-		ScriptContext scriptContext = new SimpleScriptContext();
-        Bindings engineScope = scriptContext.getBindings(ScriptContext.ENGINE_SCOPE);
-        engineScope.putAll(fireflowVariableContext);
+		Map<String,Object> fireflowVariableContext = ScriptEngineHelper.fulfillScriptContext(session, runtimeContext,
+				((WorkflowSessionLocalImpl)session).getCurrentProcessInstance(),
+				((WorkflowSessionLocalImpl)session).getCurrentActivityInstance());
+
         
 		List<Child> theChildren = this.getChildren();
 		for(Child child :theChildren){
@@ -123,30 +121,18 @@ public class If extends StructureActivity {
 			if (exp==null || exp.getBody()==null || exp.getBody().trim().equals("")){
 				this.executeChildActivity(session,token,child.getChildBpelActivity());
 				break;
-			}else{
+			} else {
 				boolean b = true;
 
-				ScriptEngine scriptEngine = runtimeContext.getScriptEngine(exp
-						.getLanguage());
-				if (scriptEngine != null) {
-					Object obj;
-					try {
-						obj = scriptEngine.eval(exp.getBody(), scriptContext);
-						if (obj instanceof Boolean) {
-							b = ((Boolean) obj).booleanValue();
-						}
-					} catch (ScriptException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-
+				Object obj = ScriptEngineHelper.evaluateExpression(
+						runtimeContext, exp, fireflowVariableContext);
+				if (obj instanceof Boolean) {
+					b = ((Boolean) obj).booleanValue();
 				}
 
-//				ConditionResolver conditionResolver = runtimeContext.getEngineModule(ConditionResolver.class,BpelConstants.PROCESS_TYPE);
-//				boolean b = conditionResolver.resolveBooleanExpression(session,
-//						exp,fireflowVariableContext);
-				if (b){
-					this.executeChildActivity(session,token,child.getChildBpelActivity());
+				if (b) {
+					this.executeChildActivity(session, token,
+							child.getChildBpelActivity());
 					break;
 				}
 			}

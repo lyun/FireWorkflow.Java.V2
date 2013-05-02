@@ -18,15 +18,16 @@ package org.fireflow.pvm.kernel.impl;
 
 import java.util.List;
 
-import org.fireflow.engine.WorkflowSession;
+import org.fireflow.client.WorkflowSession;
+import org.fireflow.client.impl.WorkflowSessionLocalImpl;
 import org.fireflow.engine.context.RuntimeContext;
-import org.fireflow.engine.impl.WorkflowSessionLocalImpl;
 import org.fireflow.pvm.kernel.ArcInstance;
 import org.fireflow.pvm.kernel.BookMark;
 import org.fireflow.pvm.kernel.ExecutionEntrance;
 import org.fireflow.pvm.kernel.KernelException;
 import org.fireflow.pvm.kernel.KernelManager;
 import org.fireflow.pvm.kernel.NodeInstance;
+import org.fireflow.pvm.kernel.PObject;
 import org.fireflow.pvm.kernel.PObjectKey;
 import org.fireflow.pvm.kernel.Token;
 import org.fireflow.pvm.kernel.TokenState;
@@ -96,7 +97,7 @@ public class ArcInstanceImpl extends AbstractPObject implements
 	@Override
 	public void takeToken(WorkflowSession session, Token token, Token sourceToken) {
 		if (!token.getState().equals(TokenState.INITIALIZED)) {
-			throw new KernelException(
+			throw new KernelException(this,
 					"Illegal token state ,the TokenState.INITIALIZED is expected,but it is  "
 							+ token.getState().name());
 		}
@@ -125,9 +126,15 @@ public class ArcInstanceImpl extends AbstractPObject implements
 
 
 			kernelManager.addBookMark(bookMark);
-		} else {
+		} 
+		else if (status.equals(BusinessStatus.RUNNING)){
+			//调试状态
+			return;
+		}
+		
+		else {
 			// 不支持其他类型的Status
-			throw new KernelException(
+			throw new KernelException(this,
 					"Not supported workflow behavior status for arc instance ,the WorkflowBehaviorStatus.COMPLETED is expected ,but the status is "
 							+ status.name());
 		}
@@ -174,7 +181,7 @@ public class ArcInstanceImpl extends AbstractPObject implements
 				}
 			}
 		} else {
-			throw new KernelException(
+			throw new KernelException(this,
 					"Unsupported ContinueDirection type for this element, whose id is ["
 							+ this.getKey().toString() + "]");
 		}
@@ -186,15 +193,16 @@ public class ArcInstanceImpl extends AbstractPObject implements
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 * （2012-02-03，该动作容易和handleTermination混淆，意义也不是特别大，暂且注销）
 	 * @see
 	 * org.fireflow.pvm.kernel.ProcessObject#handleCancellation(org.fireflow
 	 * .engine.WorkflowSession, org.fireflow.pvm.kernel.Token)
 	 */
+	/*
 	public void handleCancellation(WorkflowSession session, Token existToken, Token sourceToken) {
 		// TODO Auto-generated method stub
 
-	}
+	}*/
 
 	/*
 	 * (non-Javadoc)
@@ -226,9 +234,28 @@ public class ArcInstanceImpl extends AbstractPObject implements
 	 * @see org.fireflow.pvm.kernel.PObject#handleTermination(org.fireflow.engine.WorkflowSession, org.fireflow.pvm.kernel.Token, org.fireflow.pvm.kernel.Token)
 	 */
 	@Override
-	public void handleTermination(WorkflowSession session, Token listenerToken,
+	public void handleTermination(WorkflowSession session, Token thisToken,
 			Token sourceToken) {
-		// TODO Auto-generated method stub
+		RuntimeContext ctx = ((WorkflowSessionLocalImpl) session)
+		.getRuntimeContext();
+		KernelManager kernelManager = ctx.getDefaultEngineModule(KernelManager.class);
+		thisToken.setState(TokenState.ABORTED);
+		kernelManager.saveOrUpdateToken(thisToken);
+		WorkflowBehavior behavior = this.getWorkflowBehavior();
+		behavior.onTokenStateChanged(session, thisToken, this.getWorkflowElement());
+		
+		//触发父节点的forword
+		Token parentToken = kernelManager.getParentToken(thisToken);
+
+		PObject parent = null;
+		if (parentToken != null) {
+			parent = kernelManager.getProcessObject(parentToken);
+		}
+		BookMark bookMark = new BookMark();
+		bookMark.setToken(parentToken);
+		bookMark.setExecutionEntrance(ExecutionEntrance.FORWARD_TOKEN);
+		kernelManager.addBookMark(bookMark);
+		
 		
 	}
 

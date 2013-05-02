@@ -17,7 +17,6 @@
 package org.fireflow.engine.modules.persistence.hibernate;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
 import java.util.Date;
@@ -35,6 +34,7 @@ import org.fireflow.engine.entity.repository.impl.ProcessRepositoryImpl;
 import org.fireflow.engine.exception.EngineException;
 import org.fireflow.engine.modules.persistence.ProcessPersister;
 import org.fireflow.engine.modules.process.ProcessUtil;
+import org.fireflow.misc.Utils;
 import org.fireflow.model.InvalidModelException;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -53,6 +53,7 @@ public class ProcessPersisterHibernateImpl extends
 	private static final Log log = LogFactory.getLog(ProcessPersisterHibernateImpl.class);
 	
 	//TODO 下面这个Cache是否需要，待研究……
+	// process相关的信息实际上已经缓存在KernelManager中了，所以无需保留，2013-04-24
 	Map<ProcessKey,ProcessRepository> cache = new HashMap<ProcessKey,ProcessRepository>();
 	private boolean useProcessCache = false;
 	
@@ -122,10 +123,14 @@ public class ProcessPersisterHibernateImpl extends
 		if (repository != null) {
 			try{
 				ProcessUtil processUtil = persistenceService.getProcessUtil(processKey.getProcessType());
-				String xml = repository.getProcessAsXml();
-				ByteArrayInputStream inStream = new ByteArrayInputStream(xml.getBytes("UTF-8"));
+				String xml = repository.getProcessContent();
+				String encoding = Utils.findXmlCharset(xml);
+				ByteArrayInputStream inStream = new ByteArrayInputStream(xml.getBytes(encoding));
 				Object obj = processUtil.deserializeXml2Process(inStream);
-				((ProcessRepositoryImpl)repository).setProcess(obj);
+				((ProcessRepositoryImpl)repository).setProcessObject(obj);
+				//TODO 
+				// repository.getFileName() 与 WorkflowProcess.getClasspathUri()的设置关系如何处理？
+				
 			}catch(UnsupportedEncodingException e){
 				log.error(e);
 			}
@@ -231,6 +236,7 @@ public class ProcessPersisterHibernateImpl extends
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.modules.persistence.ProcessPersister#persistProcessToRepository(java.lang.Object, java.util.Map)
 	 */
+	/*
 	public ProcessRepository persistProcessToRepository(Object process,
 			Map<ProcessDescriptorProperty, Object> descriptorKeyValues)throws InvalidModelException {	
 		
@@ -294,19 +300,10 @@ public class ProcessPersisterHibernateImpl extends
 		}
 
 		//7.process
-		processRepository.setProcess(process);
+		processRepository.setProcessObject(process);
 		
 
-		//8.latestEditTime
-		Date d = (Date)descriptorKeyValues.get(ProcessDescriptorProperty.LATEST_EDIT_TIME);
-		if (d==null){
-			processRepository.setLatestEditTime(new Date());
-		}else{
-			processRepository.setLatestEditTime(d);
-		}
-
-
-		//9.publishState
+		//8.publishState
 		Boolean publishState = null;	
 		if (existProcess!=null){
 			publishState = existProcess.getPublishState();
@@ -326,45 +323,23 @@ public class ProcessPersisterHibernateImpl extends
 		}		
 		processRepository.setPublishState(publishState);	
 		
-		//10.latestOperation
-		boolean publishStateChanged = false;//发布状态是否改变
-		if (existProcess!=null && stateFromArgs!=null){
-			boolean oldState = existProcess.getPublishState();
-			if (oldState!=stateFromArgs){
-				publishStateChanged = true;
-			}
-		}
-		String latestOperation = ProcessDescriptor.OPERATION_UPLOAD;
-		if (existProcess==null){
-			if (publishState){
-				latestOperation = ProcessDescriptor.OPERATION_UPLOAD_PUBLISH;
-			}
-		}else{
-			if (!publishStateChanged){
-				latestOperation = ProcessDescriptor.OPERATION_UPDATE;
-			}else{
-				if (publishState){
-					latestOperation = ProcessDescriptor.OPERATION_UPDATE_PUBLISH;
-				}else{
-					latestOperation = ProcessDescriptor.OPERATION_UPDATE_UNPUBLISH;
-				}
-			}
-		}
-		processRepository.setLatestOperation(latestOperation);
 		
-		//11.latestEditor
-		processRepository.setLatestEditor((String) descriptorKeyValues
-				.get(ProcessDescriptorProperty.LATEST_EDITOR));
+		//9.latestEditor
+		processRepository.setLastEditor((String) descriptorKeyValues
+				.get(ProcessDescriptorProperty.LAST_EDITOR));
 		
-		//12,filename
+		//10,filename
 		String fileName = (String) descriptorKeyValues
 		.get(ProcessDescriptorProperty.FILE_NAME);
-		if (fileName==null || fileName.trim().equals("")){
-			fileName=processId+".fpdl20.xml";
+		if (fileName!=null && !fileName.trim().equals("")){
+			processRepository.setFileName(fileName);
+		}else if (existProcess!=null){
+			//如果已经有现有的Respository，则采用已有的fileName
+			processRepository.setFileName(existProcess.getFileName());
 		}
-		processRepository.setFileName(fileName);
 
-		//12.other properties
+
+		//11.other properties
 		processRepository.setOwnerDeptId((String) descriptorKeyValues
 				.get(ProcessDescriptorProperty.OWNER_DEPT_ID));
 		processRepository.setOwnerDeptName((String) descriptorKeyValues
@@ -378,11 +353,14 @@ public class ProcessPersisterHibernateImpl extends
 
 		this.saveOrUpdate(processRepository);
 		
-		this.cache(processRepository);
+		if (useProcessCache){
+			this.cache(processRepository);
+		}
 		
 		return processRepository;
 
 	}
+	*/
 
 	
 //	/* (non-Javadoc)
@@ -416,5 +394,23 @@ public class ProcessPersisterHibernateImpl extends
 			return this.cache.get(key);
 		}
 		return null;
+	}
+	
+	public ProcessRepository persistProcessToRepository(String processXml,ProcessDescriptor descriptor) {
+		ProcessRepositoryImpl repository = (ProcessRepositoryImpl)descriptor.toProcessRepository();
+		repository.setProcessContent(processXml);
+		
+		//表示插入操作，需要重新生成version字段
+		if (repository.getId()==null || repository.getId().trim().equals("")){
+			int v = this.findTheLatestVersion(repository.getProcessId(), repository.getProcessType());
+			repository.setVersion(v+1);
+		}
+		
+		this.saveOrUpdate(repository);
+		//缓存
+		if (useProcessCache){
+			this.cache(repository);
+		}
+		return repository;
 	}
 }

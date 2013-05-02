@@ -18,7 +18,7 @@ package org.fireflow.engine.entity.runtime;
 
 import java.util.Date;
 
-import org.fireflow.engine.WorkflowSession;
+import org.fireflow.client.WorkflowSession;
 import org.fireflow.engine.entity.WorkflowEntity;
 import org.fireflow.engine.exception.EngineException;
 import org.fireflow.model.InvalidModelException;
@@ -33,11 +33,6 @@ public interface ProcessInstance  extends Scope,WorkflowEntity{
     /////////////////////////////////////////////////////////////////
     ///////////////////    实例属性      ////////////////////////////////
     ////////////////////////////////////////////////////////////////
-    /**
-     * 主键
-     * @return
-     */
-    public String getId();
     
     /**
      * 返回流程实例所关联的业务表单的Id
@@ -49,19 +44,23 @@ public interface ProcessInstance  extends Scope,WorkflowEntity{
      * 流程实例的name（与流程定义的name相同）
      * @return
      */
-    public String getName();
+    public String getProcessName();
 
     /**
      * 流程实例的DisplayName（与流程定义的DisplayName相同）
      * @return
      */
-    public String getDisplayName();
+    public String getProcessDisplayName();
+    
+    public String getSubProcessName();
+    
+    public String getSubProcessDisplayName();
     
     /**
      * 增加一个bizcategory字段，以方便查询
      * @return
      */
-    public String getBizCategory();
+    public String getBizType();
 
     /**
      * 流程定义的id
@@ -82,6 +81,12 @@ public interface ProcessInstance  extends Scope,WorkflowEntity{
      * @return
      */
     public Integer getVersion();
+    
+    /**
+     * 获得当前实例对应的subflow，对于没有subflow的模型，该值等于processId。
+     * @return
+     */
+    public String getSubProcessId();
 
     /**
      * 流程实例创建者ID
@@ -163,6 +168,7 @@ public interface ProcessInstance  extends Scope,WorkflowEntity{
     
     public String getTokenId();
     
+    
     /////////////////////////////////////////////////////////////////
     ///////////////////    业务操作    ////////////////////////////////
     ////////////////////////////////////////////////////////////////
@@ -181,17 +187,17 @@ public interface ProcessInstance  extends Scope,WorkflowEntity{
      * 强行中止流程实例，不管是否达到终态。
      * @throws RuntimeException
      */
-    public void abort(WorkflowSession session) throws EngineException;
+//    public void abort(WorkflowSession session) throws EngineException;
 
     /**
      * 挂起
      * @throws org.fireflow.engine.exception.EngineException
      */
-    public void suspend(WorkflowSession session) throws EngineException;
+//    public void suspend(WorkflowSession session) throws EngineException;
 
     /**
      * 从挂起状态恢复到挂起前的状态
      * @throws org.fireflow.engine.exception.EngineException
      */
-    public void restore(WorkflowSession session) throws EngineException;
+//    public void restore(WorkflowSession session) throws EngineException;
 }

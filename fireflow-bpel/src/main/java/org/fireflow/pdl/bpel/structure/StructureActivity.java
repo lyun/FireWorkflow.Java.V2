@@ -3,9 +3,9 @@ package org.fireflow.pdl.bpel.structure;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.fireflow.engine.WorkflowSession;
+import org.fireflow.client.WorkflowSession;
+import org.fireflow.client.impl.WorkflowSessionLocalImpl;
 import org.fireflow.engine.context.RuntimeContext;
-import org.fireflow.engine.impl.WorkflowSessionLocalImpl;
 import org.fireflow.pdl.bpel.AbstractActivity;
 import org.fireflow.pdl.bpel.BpelActivity;
 import org.fireflow.pvm.kernel.KernelManager;
@@ -42,7 +42,7 @@ public abstract class StructureActivity extends AbstractActivity {
 		
 		RuntimeContext ctx = ((WorkflowSessionLocalImpl)session).getRuntimeContext();
 		KernelManager kernelManager = ctx.getDefaultEngineModule(KernelManager.class);
-		kernelManager.fireChildPObject(session, pobjectKey, parentToken);
+		kernelManager.startPObject(session, pobjectKey, parentToken,null);
 	}	
 	
 	public void abort(WorkflowSession session,Token thisToken,Object workflowElement){

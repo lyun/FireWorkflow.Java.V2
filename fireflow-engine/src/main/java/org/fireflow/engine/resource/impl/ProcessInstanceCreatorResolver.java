@@ -18,20 +18,19 @@ package org.fireflow.engine.resource.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
-import org.fireflow.engine.WorkflowSession;
+import org.fireflow.client.WorkflowSession;
+import org.fireflow.client.impl.WorkflowSessionLocalImpl;
 import org.fireflow.engine.context.RuntimeContext;
+import org.fireflow.engine.entity.runtime.ActivityInstance;
 import org.fireflow.engine.entity.runtime.ProcessInstance;
-import org.fireflow.engine.impl.WorkflowSessionLocalImpl;
-import org.fireflow.engine.modules.ousystem.Actor;
-import org.fireflow.engine.modules.ousystem.OUSystemAdapter;
+import org.fireflow.engine.modules.ousystem.OUSystemConnector;
 import org.fireflow.engine.modules.ousystem.User;
 import org.fireflow.engine.modules.ousystem.impl.FireWorkflowSystem;
 import org.fireflow.engine.modules.ousystem.impl.UserImpl;
 import org.fireflow.engine.resource.ResourceResolver;
-import org.fireflow.model.resourcedef.Resource;
+import org.fireflow.model.resourcedef.ResourceDef;
 
 /**
  * 解析流程实例创建者
@@ -39,17 +38,17 @@ import org.fireflow.model.resourcedef.Resource;
  * @author 非也
  * @version 2.0
  */
-public class ProcessInstanceCreatorResolver implements ResourceResolver{
+public class ProcessInstanceCreatorResolver extends ResourceResolver{
 
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.resource.ResourceResolver#resolve(org.fireflow.model.resourcedef.Resource, java.util.Map)
 	 */
-	public List<User> resolve(WorkflowSession session,Resource resource,
-			Map<String, Object> parameterValues) {
+	public List<User> resolve(WorkflowSession session,ProcessInstance currentProcessInstance,
+			ActivityInstance currentActivityInstance, ResourceDef resource) {
 		
 		List<User> users = new ArrayList<User>();
-		
-		ProcessInstance processInstance = session.getCurrentProcessInstance();
+		WorkflowSessionLocalImpl localSession = (WorkflowSessionLocalImpl)session;
+		ProcessInstance processInstance = localSession.getCurrentProcessInstance();
 		if (processInstance==null)return users;
 		
 		String userId = processInstance.getCreatorId();
@@ -60,16 +59,16 @@ public class ProcessInstanceCreatorResolver implements ResourceResolver{
 		
 		
 		RuntimeContext rtCtx = ((WorkflowSessionLocalImpl)session).getRuntimeContext();
-		OUSystemAdapter ouSystemAdapter = rtCtx.getEngineModule(OUSystemAdapter.class, processInstance.getProcessType());
+		OUSystemConnector ouSystemAdapter = rtCtx.getEngineModule(OUSystemConnector.class, processInstance.getProcessType());
 
 //		User u = ouSystemAdapter.findUserById(userId);
 		//不从数据库查询，而是构造一个User，提高效率
 		UserImpl u = new UserImpl();
 		Properties props = new Properties();
-		props.put(User.ID, processInstance.getCreatorId());
-		props.put(User.NAME, processInstance.getCreatorName());
-		props.put(User.DEPT_ID, processInstance.getCreatorDeptId());
-		props.put(User.DEPT_NAME, processInstance.getCreatorDeptName());
+		u.setId(processInstance.getCreatorId());
+		u.setName( processInstance.getCreatorName());
+		u.setDeptId(processInstance.getCreatorDeptId());
+		u.setDeptName( processInstance.getCreatorDeptName());
 		u.setProperties(props);
 		
 		users.add(u);

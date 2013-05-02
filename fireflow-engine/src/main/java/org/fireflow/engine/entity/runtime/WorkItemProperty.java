@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 import org.fireflow.engine.entity.EntityProperty;
+import org.fireflow.engine.entity.WorkflowEntity;
 
 /**
  * @author 非也
@@ -30,16 +31,18 @@ import org.fireflow.engine.entity.EntityProperty;
 public enum WorkItemProperty implements EntityProperty {
 	ID("id"),
 	STATE("state"),
-	USER_ID("userId"),
-	USER_NAME("userName"),
-	USER_DEPT_ID("userDeptId"),
-	USER_DEPT_NAME("userDeptName"),
+	WORKITEM_NAME("workItemName"),
+	SUBJECT("subject"),
+	OWNER_ID("ownerId"),
+	OWNER_NAME("ownerName"),
+	OWNER_DEPT_ID("ownerDeptId"),
+	OWNER_DEPT_NAME("ownerDeptName"),
 	CREATED_TIME("claimedTime"),
 	CLAIMED_TIME("startedTime"),
 	END_TIME("endTime"),
-	COMMENT_ID("commentId"),
-	COMMENT_SUMMARY("commentSummary"),
-	COMMENT_DETAIL("commentDetail"),
+	ATTACHMENT_ID("attachmentId"),
+	ATTACHMENT_TYPE("attachmentType"),
+	NOTE("note"),
 	RESPONSIBLE_PERSON_ID("responsiblePersonId"),
 	RESPONSIBLE_PERSON_NAME("responsiblePersonName"),
 	RESPONSIBLE_PERSON_DEPT_ID("responsiblePersonDeptId"),
@@ -47,8 +50,11 @@ public enum WorkItemProperty implements EntityProperty {
 	PARENT_WORKITEM_ID("parentWorkItemId"),
 	REASSIGN_TYPE("reassignType"),
 	ASSIGNMENT_STRATEGY("assignmentStrategy"),
+	FORM_RUL("formURL"),
 	
-	ACTIVITY_INSTANCE_$_ID("activityInstance"), 
+	BIZ_ID("bizId"),
+	
+	ACTIVITY_INSTANCE_$_ID("activityInstance.id"), 
 	ACTIVITY_INSTANCE_$_PROCESSINSTANCE_ID(	"activityInstance.processInstanceId"),
 	ACTIVITY_INSTANCE_$_BIZ_ID(	"activityInstance.bizId"), 
 	ACTIVITY_INSTANCE_$_ACTIVITY_ID("activityInstance.nodeId"),
@@ -58,8 +64,10 @@ public enum WorkItemProperty implements EntityProperty {
 	ACTIVITY_INSTANCE_$_PROCESSS_ID("activityInstance.processId"),
 	ACTIVITY_INSTANCE_$_PROCESS_NAME("activityInstance.processName"),
 	ACTIVITY_INSTANCE_$_PROCESS_DISPLAY_NAME("activityInstance.processDisplayName"),
-	ACTIVITY_INSTANCE_$_STEP_NUMBER("activityInstance.stepNumber");
-	
+	ACTIVITY_INSTANCE_$_STEP_NUMBER("activityInstance.stepNumber"),
+	ACTIVITY_INSTANCE_$_PROCINST_CREATOR_ID("activityInstance.procInstCreatorId"),
+	ACTIVITY_INSTANCE_$_PROCINST_CREATOR_NAME("activityInstance.procInstCreatorName"),
+	ACTIVITY_INSTANCE_$_PROCINST_CREATED_TIME("activityInstance.procInstCreatedTime");
 	;
 	
 	
@@ -89,6 +97,18 @@ public enum WorkItemProperty implements EntityProperty {
 		List<EntityProperty> all = new ArrayList<EntityProperty>();
 		all.add(ID);
 		return all;
+	}
+	
+    public static WorkItemProperty fromValue(String v) {
+        for (WorkItemProperty c: WorkItemProperty.values()) {
+            if (c.getPropertyName().equals(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
+    }
+	public String getEntityName(){
+		return WorkflowEntity.ENTITY_NAME_WORKITEM;
 	}
 
 }

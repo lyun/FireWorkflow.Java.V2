@@ -17,11 +17,14 @@
 package org.fireflow.engine.modules.persistence;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
+import org.fireflow.engine.entity.repository.ResourceDescriptor;
 import org.fireflow.engine.entity.repository.ResourceDescriptorProperty;
 import org.fireflow.engine.entity.repository.ResourceRepository;
-import org.fireflow.model.io.ParserException;
+import org.fireflow.model.InvalidModelException;
+import org.fireflow.model.io.DeserializerException;
 
 /**
  * 
@@ -36,15 +39,15 @@ public interface ResourcePersister extends Persister{
 	 * @param serviceFileInput
 	 * @return
 	 */
-	public ResourceRepository persistResourceFileToRepository(
+	public List<ResourceDescriptor> persistResourceFileToRepository(
 			InputStream resourceFileInput,
-			Map<ResourceDescriptorProperty, Object> properties);
+			Map<ResourceDescriptorProperty, Object> properties)throws DeserializerException,InvalidModelException;
 	
 	/**
 	 * 根据文件名将ResourceRepository读取出来
 	 * @param resourceFileName
 	 * @return
 	 */
-	public ResourceRepository findResourceRepositoryByFileName(String resourceFileName)throws ParserException;
+	public ResourceRepository findResourceRepositoryByFileName(String resourceFileName)throws DeserializerException;
 
 }

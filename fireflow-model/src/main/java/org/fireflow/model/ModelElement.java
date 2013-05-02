@@ -31,14 +31,15 @@ import java.util.Map;
  * 
  */
 public interface ModelElement {
+
+	public static final String ID_SEPARATOR = ".";
     /**
      * 返回元素的序列号，
      * 业务系统无须关心该序列号。
      * @return 元素序列号
      */
-    public String getSn();
+//    public String getSn();
 
-    public void setSn(String s);
 
     /**
      * 返回工作流元素的Id
@@ -87,9 +88,11 @@ public interface ModelElement {
 //     */
 //    public List<EventListener> getEventListeners();
 //
-//    /**
-//     * 返回扩展属性Map
-//     * @return
-//     */
-//    public Map<String, String> getExtendedAttributes();
+    
+    public String getExtendedAttribute(String propName);
+    /**
+     * 返回扩展属性Map
+     * @return
+     */
+    public Map<String, String> getExtendedAttributes();
 }

@@ -16,10 +16,14 @@
  */
 package org.fireflow.pdl.fpdl20.process.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.fireflow.model.data.Expression;
+import org.fireflow.pdl.fpdl20.process.Activity;
 import org.fireflow.pdl.fpdl20.process.Node;
+import org.fireflow.pdl.fpdl20.process.SubProcess;
 import org.fireflow.pdl.fpdl20.process.Transition;
-import org.fireflow.pdl.fpdl20.process.WorkflowProcess;
 
 
 
@@ -28,7 +32,7 @@ import org.fireflow.pdl.fpdl20.process.WorkflowProcess;
  * @author 非也,nychen2000@163.com
  */
 @SuppressWarnings("serial")
-public class TransitionImpl extends ArcImpl implements Transition{
+public class TransitionImpl extends ConnectorImpl implements Transition{
 	private boolean isLoop = false;
 	private boolean isDefault = false;
 	private Expression condition = null;
@@ -36,12 +40,12 @@ public class TransitionImpl extends ArcImpl implements Transition{
     public TransitionImpl() {
     }
 
-    public TransitionImpl(WorkflowProcess workflowProcess, String name) {
-        super(workflowProcess, name);
+    public TransitionImpl(SubProcess subflow, String name) {
+        super(subflow, name);
     }
 
-    public TransitionImpl(WorkflowProcess workflowProcess, String name, Node fromNode, Node toNode) {
-        super(workflowProcess, name);
+    public TransitionImpl(SubProcess subflow, String name, Node fromNode, Node toNode) {
+        super(subflow, name);
         this.fromNode = fromNode;
         this.toNode = toNode;
     }
@@ -84,4 +88,17 @@ public class TransitionImpl extends ArcImpl implements Transition{
 	public void setDefault(boolean isDefault){
 		this.isDefault = isDefault;
 	}
+	
+    public List<Activity> getNextActivities(){
+    	List<Activity> result = new ArrayList<Activity>();
+    	
+    	Node node = this.getToNode();
+    	if (node instanceof Activity){
+    		result.add((Activity)node);
+    		return result;
+    	}
+    	else {
+    		return node.getNextActivities();
+    	}
+    }
 }

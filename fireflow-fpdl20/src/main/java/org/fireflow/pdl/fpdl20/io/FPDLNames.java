@@ -34,9 +34,6 @@ public interface FPDLNames extends ModelElementNames{
     String FPDL_SCHEMA_LOCATION = FPDL_NS_URI+" "+FPDL_NS_URI+"/WorkflowProcessSchema-2.0.xsd";//FPDL_NS_URI+" "+"WorkflowProcessSchema-2.0.xsd"; //
     
 
-    String EXTENDED_ATTRIBUTES = "extended-attributes";
-    String EXTENDED_ATTRIBUTE = "extended-attribute";
-
 
     String VERSION = "version";
 
@@ -48,7 +45,6 @@ public interface FPDLNames extends ModelElementNames{
     String LOCATION = "location";
     
     String PRIORITY = "priority";
-    String ENTRY = "entry";
 
     String DURATION = "duration";    
     String UNIT = "unit";
@@ -70,7 +66,7 @@ public interface FPDLNames extends ModelElementNames{
     String PROPERTIES = "properties";
     String PROPERTY = "property";
     
-    String REFERENCE = "reference";
+    String REF = "ref";
 
     String INIT_VALUE = "init-value";
 
@@ -91,12 +87,22 @@ public interface FPDLNames extends ModelElementNames{
 
     
 
-    String DECORATOR = "decorator";
+    String FEATURES = "features";
     
-    String NORMAL_START_DECORATOR = "normal-start-decorator";
-    String NORMAL_END_DECORATOR = "normal-end-decorator";
-    String THROW_TERMINATION_DECORATOR = "throw-termination-decorator";
-    String TIMER_START_DECORATOR = "timer-start-decorator";
+    String DEFAULT_ROUTER_FEATURE = "default-router-feature";
+    String ANDJOIN_ANDSPLIT_FEATURE = "andjoin-andsplit-feature";
+    String XORJOIN_XORSPLIT_FEATURE = "xorjoin-xorsplit-feature";
+    String ORJOIN_ORSPLIT_FEATURE = "orjoin-orsplit-feature";
+    String CUSTOMIZED_JOIN_SPLIT_FEATURE = "customized-join-split-feature";
+    String JOIN_EVALUATOR = "join-evaluator";
+    String SPLIT_EVALUATOR = "split-evaluator";
+    
+    String NORMAL_START_FEATURE = "normal-start-feature";
+    String NORMAL_END_FEATURE = "normal-end-feature";
+    String THROW_TERMINATION_FEATURE = "throw-termination-feature";
+    String TIMER_START_FEATURE = "timer-start-feature";
+    String WEBSERVICE_START_FEATURE = "webservice-start-feature";
+    
     String ATTACHED_TO_ACTIVITY = "attached-to-activity";
     String IS_CANCEL_ATTACHED_TO_ACTIVITY = "is-cancel-attached-to-activity";
     String TIMER_OPERATION_NAME = "timer-operation-name";
@@ -106,14 +112,14 @@ public interface FPDLNames extends ModelElementNames{
     String REPEAT_INTERVAL_EXPRESSION = "repeat-interval";
     String REPEAT_COUNT_EXPRESSION = "repeat-count";
     
-    String CATCH_COMPENSATION_DECORATOR = "catch-compensation-decorator";
+    String CATCH_COMPENSATION_FEATURE = "catch-compensation-feature";
     String COMPENSATION_CODE = "compensation-code";
     String COMPENSATION_CODES = "compensation-codes";
     String ERROR_CODE = "error-code";
-    String CATCH_FAULT_DECORATOR = "catch-fault-decorator";
+    String CATCH_FAULT_FEATURE = "catch-fault-feature";
     
-    String THROW_COMPENSATION_DECORATOR = "throw-compensation-decorator";
-    String THROW_FAULT_DECORATOR = "throw-fault-decorator";
+    String THROW_COMPENSATION_FEATURE = "throw-compensation-feature";
+    String THROW_FAULT_FEATURE = "throw-fault-feature";
     
     String SERVICE_BINDING = "service-binding";
     String SERVICE_ID = "service-id";
@@ -146,12 +152,78 @@ public interface FPDLNames extends ModelElementNames{
     String POTENTIAL_OWNERS = "potential-owners";
     String READERS = "readers";
     
+    String SUBFLOWS = "sub-processes";
+    String SUBFLOW = "sub-process";
 
-
+    String POOL = "pool";
+    String IS_ABSTRACT = "is-abstract";
+    String MESSAGEFLOW = "messgeflow";
+    String ASSOCIATION = "association";
+    String COMMENT = "comment";
+    String LANE = "lane";
+    String GROUP = "group";
     
+    String WORKITEM_EVENT_LISTENERS = "workitem_event-listeners";
     String EVENT_LISTENERS = "event-listeners";
     String EVENT_LISTENER = "event-listener";
 
+    /////////////////////////////////////////////////////////
+    ////    图形元素名称                                            /////////////////////
+    /////////////////////////////////////////////////////////
+    String NODE = "node";
+    String FIGURE = "figure";
+    
+    String CONNECTOR = "connector";
+    
+    String DIAGRAMS = "diagrams";
+    String DIAGRAM = "diagram";
+    String SUBFLOW_ID = "subflow-id";
+    String DIRECTION = "direction";
+    String GRID_ENABLED = "grid-enabled";
+    String RULER_ENABLED = "ruler-enabled";
+    String SNAP_ENABLED = "snap-enabled";
+    
+    //String PLANE = "plane";
+    String LABEL = "label";
+    String CONTENT = "content";
+    
+    String BOUNDS = "bounds";
+    String X = "x";
+    String Y = "y";
+//    String UPPER_LEFT_CORNER = "upper-left-corner";
+    String WIDTH = "width";
+    String HEIGHT = "height";
+    String BORDER_STYLE = "border-style";
+    
+    String LINE_TYPE = "line-type";
+    String THICK = "thick";
+    String SPACE = "space";
+//    String CORNER_TYPE = "corner-type";
+    String LABEL_POSITION = "titleLabel-position";
+    String TEXT_DIRECTION = "text-direction";
+    
+    String RADIUS = "radius";
+    
+    String FULFIL_STYLE = "fulfil-style";
+    
+    String RECTANGLE = "rectangle";
+    String TITLE = "title";
+    
+    String CIRCLE = "circle";
+    String THE_CENTER = "the-center";
+    
+    String LINE = "line";
+
+    
+    String POINT_LIST = "point-list";
+
+    String COLOR = "color";
+    String SIZE = "size";
+    String FONT_STYLE = "font-style";
+    String FONT_NAME = "font-name";
+    String GRADIENT_STYLE = "gradient-style";
+    
+    
 
     Namespace XSD_NS = new Namespace(XSD_NS_PREFIX, XSD_URI);
     Namespace XSI_NS = new Namespace(XSI_NS_PREFIX, XSI_URI);

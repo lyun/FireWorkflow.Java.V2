@@ -38,6 +38,27 @@ import org.fireflow.pvm.kernel.KernelException;
  *
  */
 public class RuntimeContext {
+	/**
+	 * FPDL2.0缺省需要Spring作为容器，该常量定义transaction template的名字
+	 */
+	public static final String Spring_Transaction_Template_Name = "springTransactionTemplate";
+	
+	/**
+	 * FPDL2.0 缺省采用Hibernate作为存储层ORM方案，该常量定义hibernate session factory的名字
+	 */
+	public static final String Spring_Hibernate_Session_Factory_Name = "hibernateSessionFactory";
+	
+	/**
+	 * FPDL2.0缺省采用Spring作为容器，该常量定义Transaction Manager的名字
+	 */
+	public static final String Spring_Transaction_Manager_Name = "springTransactionManager";
+	
+	/**
+	 * Fire workflow runtime context的bean name(或者id)
+	 */
+	public static final String Fireflow_Runtime_Context_Name = "fireflowRuntimeContext";
+	
+	
 	private Map<String,ProcessDefinitionLanguageExtension> processDefinitionLanguageRegistry = new HashMap<String,ProcessDefinitionLanguageExtension>();
 	private Map<String,EngineModule> defaultEngineModules = new HashMap<String,EngineModule>();
 	
@@ -50,6 +71,13 @@ public class RuntimeContext {
      * 是否打开流程跟踪，如果打开，则会往T_FF_HIST_TRACE表中插入纪录。
      */
     private boolean enableTrace = false;
+    
+    /**
+     * 是否将org.fireflow.engine.server.WorkflowServer发布成WebService。
+     * WebService的地址由org.fireflow.engine.modules.env.Environment.getWebserviceContextPath()决定。
+     * 缺省是关闭的，不推荐使用Webservice方式调用Fire workflow engin.
+     */
+    private boolean publishWorkflowService = false;
     
     private String defaultScript = "JEXL";//缺省的脚本语言
     private String defaultProcessType="FPDL20";//缺省的流程类型
@@ -64,14 +92,50 @@ public class RuntimeContext {
     }
 
 
-    /**
+    public boolean isPublishWorkflowService() {
+		return publishWorkflowService;
+	}
+
+
+
+	public void setPublishWorkflowService(boolean b) {
+		this.publishWorkflowService = b;
+	}
+
+
+
+	/**
      * 初始化方法
      * @throws EngineException
      * @throws KernelException
      */
     public void initialize() throws EngineException, KernelException {
         if (!isInitialized) {
-            initAllNetInstances();
+        	if (processDefinitionLanguageRegistry.size()>0){
+        		Iterator<ProcessDefinitionLanguageExtension> processDefExtReg = this.processDefinitionLanguageRegistry.values().iterator();
+        		while(processDefExtReg.hasNext()){
+        			ProcessDefinitionLanguageExtension ext = processDefExtReg.next();
+        			if (ext.getEngineModules()!=null && ext.getEngineModules().size()>0){
+        				Iterator<EngineModule> engineModules = ext.getEngineModules().values().iterator();
+        				while(engineModules.hasNext()){
+        					EngineModule module = engineModules.next();
+        					module.init(this);
+        				}
+        			}
+        		}
+        	
+        	}
+        	
+        	if (this.defaultEngineModules.size()>0){
+        		Iterator<EngineModule> iter = this.defaultEngineModules.values().iterator();
+        		while(iter.hasNext()){
+        			EngineModule module = iter.next();
+        			module.init(this);
+        		}
+        	}
+        	
+        	
+//            initAllNetInstances();
             isInitialized = true;
         }
     }
@@ -80,9 +144,9 @@ public class RuntimeContext {
      * 初始化所有的工作流网实例
      * @throws KernelException
      */
-    protected void initAllNetInstances() throws KernelException {
-
-    }
+//    protected void initAllNetInstances() throws KernelException {
+//
+//    }
 
     public boolean isEnableTrace() {
         return enableTrace;
@@ -135,6 +199,17 @@ public class RuntimeContext {
     	return (T)module;
     }
     
+    public ScriptEngine getScriptEngine(String expressionLanguageName){
+    	ScriptEngineManager manager = new ScriptEngineManager();
+    	ScriptEngine engine = manager.getEngineByName(expressionLanguageName);
+    	
+    	return engine;
+    }
+    
+    public Map<String,ProcessDefinitionLanguageExtension> getRegistedProcessDefinitionLanguages(){
+    	return this.processDefinitionLanguageRegistry;
+    }
+    
     
     public void setDefaultEngineModules(Map<String,EngineModule> _engineModules){
     	if (_engineModules==null){
@@ -160,14 +235,6 @@ public class RuntimeContext {
     	}
     }
     
-    public ScriptEngine getScriptEngine(String expressionLanguageName){
-    	ScriptEngineManager manager = new ScriptEngineManager();
-    	ScriptEngine engine = manager.getEngineByName(expressionLanguageName);
-    	
-    	return engine;
-    }
-
-
 
 	/**
 	 * @return the defaultProcessType

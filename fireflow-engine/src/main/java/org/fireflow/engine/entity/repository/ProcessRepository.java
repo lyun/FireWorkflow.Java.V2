@@ -21,7 +21,13 @@ package org.fireflow.engine.entity.repository;
  * @version 2.0
  */
 public interface ProcessRepository extends ProcessDescriptor {
-	public String getProcessAsXml();
+	public String getProcessContent();
 	
-	public Object getProcess();
+	public Object getProcessObject();
+	
+	/**
+	 * 转换成ProcessDescriptorImpl对象，便于WebService参数传递
+	 * @return
+	 */
+	public ProcessDescriptor toProcessDescriptor();
 }

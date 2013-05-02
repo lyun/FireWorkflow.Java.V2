@@ -21,9 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.fireflow.engine.WorkflowSession;
+import org.fireflow.client.WorkflowSession;
+import org.fireflow.client.impl.WorkflowSessionLocalImpl;
 import org.fireflow.engine.context.RuntimeContext;
-import org.fireflow.engine.impl.WorkflowSessionLocalImpl;
 import org.fireflow.pvm.kernel.BookMark;
 import org.fireflow.pvm.kernel.ExecutionEntrance;
 import org.fireflow.pvm.kernel.KernelException;
@@ -49,7 +49,7 @@ public abstract class AbstractPObject implements PObject {
 	protected WorkflowBehavior behavior = null;
 	protected boolean acceptCancellation = false;
 	protected boolean acceptCompensation = false;
-	protected PObject cancellationHandler = null;
+//	protected PObject cancellationHandler = null;//（2012-02-05，Cancel动作容易和handleTermination混淆，意义也不是特别大，暂且注销）
 	protected Map<String,PObject> faultHandlers = new HashMap<String,PObject>();
 	protected PObject defaultFaultHandler = null;
 	protected Map<String,PObject> compensationHandlers = new HashMap<String,PObject>();
@@ -130,13 +130,14 @@ public abstract class AbstractPObject implements PObject {
 		this.acceptCompensation = b;
 	}
 
+	/* （2012-02-05，Cancel动作容易和handleTermination混淆，意义也不是特别大，暂且注销）
 	public PObject getCancellationHandler() {
 		return cancellationHandler;
 	}
-	
 	public void setCancellationHandler(PObject pobject){
 		this.cancellationHandler = pobject;
 	}
+	*/
 
 
 	/**
@@ -230,7 +231,7 @@ public abstract class AbstractPObject implements PObject {
 	protected void executeBusinessLogicLogic(WorkflowSession session,
 			Token token) {
 		if (!token.getState().equals(TokenState.RUNNING)) {
-			throw new KernelException(
+			throw new KernelException(this,
 					"Illegal token state ,the TokenState.RUNNING is expected,but it is  "
 							+ token.getState().name());
 		}
@@ -258,7 +259,7 @@ public abstract class AbstractPObject implements PObject {
 			kernelManager.addBookMark(bookMark);
 
 		} else {
-			throw new KernelException(
+			throw new KernelException(this,
 					"Not supported workflow behavior status for NodeInstance.takeToken(...) ,"
 							+ "WorkflowBehaviorStatus.RUNNING or WorkflowBehaviorStatus.FAULTING or status.equals(WorkflowBehaviorStatus.COMPLETED is expected,but the status is "
 							+ status.name());// 非法的返回状态
@@ -273,6 +274,7 @@ public abstract class AbstractPObject implements PObject {
 	 * .WorkflowSession, org.fireflow.pvm.kernel.Token)
 	 */
 	public void forwardToken(WorkflowSession session, Token token, Token sourceToken) {
+		//TODO 2012-02-03 token的状态有可能被前一个bookmark修改过，导致与数据库中的真实状态不匹配，所以在非hibernate情况下要校验一致性。
 		if (token.getState().getValue() > TokenState.DELIMITER.getValue()) {
 			return;
 		}
@@ -282,25 +284,23 @@ public abstract class AbstractPObject implements PObject {
 				.getDefaultEngineModule(KernelManager.class);
 
 
-
-		Token parentToken = kernelManager.getParentToken(token);
-
-		PObject parent = null;
-		if (parentToken != null) {
-			parent = kernelManager.getProcessObject(parentToken);
-		}
-
-		Token callbackToken = null;
-		if (token.getCallbackTokenId() != null) {
-			callbackToken = kernelManager.getToken(token.getCallbackTokenId(),
-					token.getProcessType());
-		}
-
 		if (token.getState() != null
 				&& token.getState().equals(TokenState.RUNNING)) {
 			_forwardRunningToken(session,kernelManager,token,sourceToken);
 		} else if (token.getState() != null
 				&& token.getState().equals(TokenState.FAULTING)) {
+			
+			Token parentToken = kernelManager.getParentToken(token);
+
+			PObject parent = null;
+			if (parentToken != null) {
+				parent = kernelManager.getProcessObject(parentToken);
+			}
+			Token callbackToken = null;
+			if (token.getCallbackTokenId() != null) {
+				callbackToken = kernelManager.getTokenById(token.getCallbackTokenId(),
+						token.getProcessType());
+			}
 			//不需要调用behavior.continueOn(session,	token, this.getWorkflowElement());
 			//此种情况默认为ContinueDirection.CloseMe()
 			if (callbackToken != null) {
@@ -315,6 +315,7 @@ public abstract class AbstractPObject implements PObject {
 				kernelManager.addBookMark(bookMark);
 			}
 			if (!kernelManager.hasChildrenInQueue(token)) {
+				
 				token.setState(TokenState.FAULTED);
 				kernelManager.saveOrUpdateToken(token);
 				behavior.onTokenStateChanged(session, token, this
@@ -326,9 +327,20 @@ public abstract class AbstractPObject implements PObject {
 			_forwardCompensatingToken(session,kernelManager,token,sourceToken);
 
 		} else if (token.getState() != null
-				&& token.getState().equals(TokenState.CANCELLING)) {
+				&& token.getState().equals(TokenState.ABORTING)) {
 			//不需要调用behavior.continueOn(session,	token, this.getWorkflowElement());
 			//此种情况默认为ContinueDirection.CloseMe()
+			Token parentToken = kernelManager.getParentToken(token);
+
+			PObject parent = null;
+			if (parentToken != null) {
+				parent = kernelManager.getProcessObject(parentToken);
+			}
+			Token callbackToken = null;
+			if (token.getCallbackTokenId() != null) {
+				callbackToken = kernelManager.getTokenById(token.getCallbackTokenId(),
+						token.getProcessType());
+			}
 			if (callbackToken != null) {
 				BookMark bookMark = new BookMark();
 				bookMark.setToken(callbackToken);
@@ -342,7 +354,7 @@ public abstract class AbstractPObject implements PObject {
 			}
 
 			if (!kernelManager.hasChildrenInQueue(token)) {
-				token.setState(TokenState.CANCELLED);
+				token.setState(TokenState.ABORTED);
 				kernelManager.saveOrUpdateToken(token);
 				behavior.onTokenStateChanged(session, token, this
 						.getWorkflowElement());
@@ -351,7 +363,7 @@ public abstract class AbstractPObject implements PObject {
 		}
 
 		else {
-			throw new KernelException(
+			throw new KernelException(this,
 					"Illegal token state ,the TokenState.RUNNING or TokenState.COMPENSATING or TokenState.CANCELLING is expected,but it is  "
 							+ token.getState().name());
 		}
@@ -366,12 +378,10 @@ public abstract class AbstractPObject implements PObject {
 	}
 	
 	protected void _forwardRunningToken(WorkflowSession session ,KernelManager kernelManager,Token thisToken,Token sourceToken){
-		Token parentToken = kernelManager.getParentToken(thisToken);
-		PObject parent = kernelManager.getProcessObject(parentToken);
-		
+	
 		Token callbackToken = null;
 		if (thisToken.getCallbackTokenId() != null) {
-			callbackToken = kernelManager.getToken(thisToken.getCallbackTokenId(),
+			callbackToken = kernelManager.getTokenById(thisToken.getCallbackTokenId(),
 					thisToken.getProcessType());
 		}
 		
@@ -386,6 +396,10 @@ public abstract class AbstractPObject implements PObject {
 		} else if (continueDirection.getDirection() == ContinueDirection.CLOSE_ME) {
 			if (continueDirection.getNextProcessObjectKeys() == null
 					|| continueDirection.getNextProcessObjectKeys().size() == 0) {
+				
+				Token parentToken = kernelManager.getParentToken(thisToken);
+				PObject parent = kernelManager.getProcessObject(parentToken);
+				
 				if (callbackToken!=null){
 					BookMark bookMark = new BookMark();
 					bookMark.setToken(callbackToken);
@@ -452,22 +466,13 @@ public abstract class AbstractPObject implements PObject {
 	}
 
 	protected void _forwardCompensatingToken(WorkflowSession session ,KernelManager kernelManager,Token thisToken,Token sourceToken){
-		
-		Token parentToken = kernelManager.getParentToken(thisToken);
-		PObject parent = kernelManager.getProcessObject(parentToken);
-		
-		Token callbackToken = null;
-		if (thisToken.getCallbackTokenId() != null) {
-			callbackToken = kernelManager.getToken(thisToken.getCallbackTokenId(),
-					thisToken.getProcessType());
-		}
 		//不需要调用behavior.continueOn(session,	token, this.getWorkflowElement());
 		//此种情况默认为ContinueDirection.CloseMe()
 		
 		//首先检查本流程的（本节点的）compensationChain是否为空，
 		if (thisToken.getNextCompensationToken()!=null){
 			
-			Token nextCompensationToken = kernelManager.getToken(thisToken.getNextCompensationToken(), thisToken.getProcessType());
+			Token nextCompensationToken = kernelManager.getTokenById(thisToken.getNextCompensationToken(), thisToken.getProcessType());
 			BookMark bookMark = new BookMark();
 			bookMark.setToken(nextCompensationToken);
 			bookMark
@@ -477,6 +482,16 @@ public abstract class AbstractPObject implements PObject {
 			bookMark.setExtraArg(BookMark.SOURCE_TOKEN, sourceToken);
 			kernelManager.addBookMark(bookMark);
 		}else{
+			
+			Token parentToken = kernelManager.getParentToken(thisToken);
+			PObject parent = kernelManager.getProcessObject(parentToken);
+			
+			Token callbackToken = null;
+			if (thisToken.getCallbackTokenId() != null) {
+				callbackToken = kernelManager.getTokenById(thisToken.getCallbackTokenId(),
+						thisToken.getProcessType());
+			}
+			
 			if (callbackToken!=null){
 				BookMark bookMark = new BookMark();
 				bookMark.setToken(callbackToken);
@@ -542,12 +557,12 @@ public abstract class AbstractPObject implements PObject {
 		RuntimeContext ctx = ((WorkflowSessionLocalImpl) session)
 		.getRuntimeContext();
 		KernelManager kernelManager = ctx.getDefaultEngineModule(KernelManager.class);
-
+		boolean hasAliveChildren = false;
 		List<Token> children = kernelManager.getChildren(thisToken);
 		if (children!=null && children.size()>0){
 			for (Token childToken:children){
 				if (childToken.getState().getValue()<TokenState.DELIMITER.getValue()){
-					
+					hasAliveChildren = true;
 					BookMark bookMark = new BookMark();
 					bookMark.setToken(childToken);
 					bookMark.setExtraArg(BookMark.SOURCE_TOKEN, thisToken);
@@ -556,23 +571,42 @@ public abstract class AbstractPObject implements PObject {
 				}
 			}				
 		}
-	
-		this.getWorkflowBehavior().abort(session, thisToken, this.getWorkflowElement());
 		
-		thisToken.setState(TokenState.ABORTED);
-		kernelManager.saveOrUpdateToken(thisToken);
-		WorkflowBehavior behavior = this.getWorkflowBehavior();
-		behavior.onTokenStateChanged(session, thisToken, this.getWorkflowElement());
+		if (hasAliveChildren){
+			thisToken.setState(TokenState.ABORTING);
+			kernelManager.saveOrUpdateToken(thisToken);
+			WorkflowBehavior behavior = this.getWorkflowBehavior();
+			behavior.onTokenStateChanged(session, thisToken, this.getWorkflowElement());
+		}else{
 		
+			thisToken.setState(TokenState.ABORTED);
+			kernelManager.saveOrUpdateToken(thisToken);
+			WorkflowBehavior behavior = this.getWorkflowBehavior();
+			behavior.onTokenStateChanged(session, thisToken, this.getWorkflowElement());
+			
+			//触发父节点的forword
+			Token parentToken = kernelManager.getParentToken(thisToken);
+
+			PObject parent = null;
+			if (parentToken != null) {
+				parent = kernelManager.getProcessObject(parentToken);
+			}
+			BookMark bookMark = new BookMark();
+			bookMark.setToken(parentToken);
+			bookMark.setExecutionEntrance(ExecutionEntrance.FORWARD_TOKEN);
+			kernelManager.addBookMark(bookMark);
+			
+		}
 	}
 	
 
 	public void handleFault(WorkflowSession session, Token thisToken, Token sourceToken, String faultCode) {
 		if (!thisToken.getState().equals(TokenState.RUNNING)) {
-			throw new KernelException(
+			throw new KernelException(this,
 					"Illegal token state ,the TokenState.RUNNING is expected,but it is  "
 							+ thisToken.getState().name());
 		}
+		//System.out.println("===Inside "+this.getKey().getWorkflowElementId()+": 进入错误处理逻辑");
 		RuntimeContext ctx = ((WorkflowSessionLocalImpl) session)
 				.getRuntimeContext();
 		KernelManager kernelManager = ctx.getDefaultEngineModule(KernelManager.class);
@@ -580,8 +614,18 @@ public abstract class AbstractPObject implements PObject {
 		PObject processObject = null;
 		if (faultCode==null || faultCode.trim().equals("")){
 			processObject = this.defaultFaultHandler;
+			String s = "null";
+			if (processObject!=null){
+				s = processObject.getKey().getWorkflowElementId();
+			}
+			//System.out.println("===Inside "+this.getKey().getWorkflowElementId()+": 采用defaultFaultHandler="+s);
 		}else{
 			processObject = this.getFaultHandler(faultCode);
+			//System.out.println("===Inside "+this.getKey().getWorkflowElementId()+": 根据faultCode获得faultHandler="+processObject);
+			if (processObject==null){//如果没有找到匹配的错误处理器，则自动采用缺省的错误处理器
+				processObject = this.defaultFaultHandler;
+			}
+			
 		}
 
 
@@ -606,7 +650,7 @@ public abstract class AbstractPObject implements PObject {
 			newToken.setElementId(processObject.getKey().getWorkflowElementId());
 			newToken.setBusinessPermitted(true);
 			newToken.setCallbackTokenId(thisToken.getId());
-			newToken.setOperationContextName(OperationContextName.NORMAL);
+			newToken.setOperationContextName(OperationContextName.FAULT);
 			
 			BookMark bookMark = new BookMark();
 			bookMark.setToken(newToken);
@@ -642,7 +686,7 @@ public abstract class AbstractPObject implements PObject {
 				//2、处理异常
 				faultHandler.handleFault(session, thisToken, this.getWorkflowElement(), faultCode);
 				
-				thisToken.setState(TokenState.FAULTED);
+				thisToken.setState(TokenState.FAULTING);
 				kernelManager.saveOrUpdateToken(thisToken);
 				WorkflowBehavior behavior = this.getWorkflowBehavior();
 				behavior.onTokenStateChanged(session, thisToken, this.getWorkflowElement());
@@ -662,7 +706,7 @@ public abstract class AbstractPObject implements PObject {
 					bookMark.setExtraArg(BookMark.ERROR_CODE, faultCode);
 					kernelManager.addBookMark(bookMark);
 
-					thisToken.setState(TokenState.FAULTED);
+					thisToken.setState(TokenState.FAULTED);//如果向上层抛出，则应该记录为Faulted
 					kernelManager.saveOrUpdateToken(thisToken);
 					WorkflowBehavior behavior = this.getWorkflowBehavior();
 					behavior.onTokenStateChanged(session, thisToken, this
@@ -670,9 +714,13 @@ public abstract class AbstractPObject implements PObject {
 				}
 				//如果没有父元素，则抛出异常
 				else{
-										
+					thisToken.setState(TokenState.FAULTED);//如果向上层抛出，则应该记录为Faulted
+					kernelManager.saveOrUpdateToken(thisToken);
+					WorkflowBehavior behavior = this.getWorkflowBehavior();
+					behavior.onTokenStateChanged(session, thisToken, this
+							.getWorkflowElement());		
 					//抛出异常
-					throw new KernelException("No fault handler found for "+faultCode);
+					throw new KernelException(this,"No fault handler found for FaultCode="+faultCode);
 				}
 			}
 		}

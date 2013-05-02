@@ -76,7 +76,12 @@ public interface Activity extends Node{
 	 */
 	public List<Property> getProperties();
 	
-
+	/**
+	 * 根据输入的流程变量的名称返回流程变量
+	 * @param name 流程变量名称
+	 * @return 流程变量（即Property对象）
+	 */
+	public Property getProperty(String name);
 	
 	/**
 	 * 本活动所引用的服务
@@ -106,5 +111,13 @@ public interface Activity extends Node{
 	 */
 	public List<EventListenerDef> getEventListeners();
 	
+	public List<EventListenerDef> getWorkItemEventListeners();
 	
+	/**
+	 * 获得本节点的后继Activity，如果直接后继节点是网关(Router)，则继续寻找网关的后继节点。
+	 * @return
+	 */
+	public List<Activity> getNextActivities();
+	
+
 }

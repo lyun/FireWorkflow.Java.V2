@@ -5,22 +5,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.fireflow.engine.WorkflowSession;
-import org.fireflow.engine.WorkflowStatement;
+import javax.xml.namespace.QName;
+
+import org.fireflow.client.WorkflowSession;
+import org.fireflow.client.WorkflowStatement;
+import org.fireflow.client.impl.InternalSessionAttributeKeys;
+import org.fireflow.client.impl.WorkflowSessionLocalImpl;
 import org.fireflow.engine.context.RuntimeContext;
 import org.fireflow.engine.entity.repository.ProcessDescriptor;
 import org.fireflow.engine.entity.repository.ProcessKey;
 import org.fireflow.engine.entity.runtime.ActivityInstance;
 import org.fireflow.engine.entity.runtime.ProcessInstance;
 import org.fireflow.engine.entity.runtime.ProcessInstanceState;
+import org.fireflow.engine.entity.runtime.Variable;
+import org.fireflow.engine.entity.runtime.impl.AbsVariable;
 import org.fireflow.engine.entity.runtime.impl.ProcessInstanceImpl;
-import org.fireflow.engine.impl.InternalSessionAttributeKeys;
-import org.fireflow.engine.impl.WorkflowSessionLocalImpl;
+import org.fireflow.engine.entity.runtime.impl.VariableImpl;
 import org.fireflow.engine.modules.calendar.CalendarService;
 import org.fireflow.engine.modules.instancemanager.ProcessInstanceManager;
 import org.fireflow.engine.modules.persistence.PersistenceService;
 import org.fireflow.engine.modules.persistence.ProcessInstancePersister;
 import org.fireflow.engine.modules.persistence.ProcessPersister;
+import org.fireflow.engine.modules.persistence.TokenPersister;
+import org.fireflow.engine.modules.persistence.VariablePersister;
 import org.fireflow.pvm.kernel.KernelManager;
 import org.fireflow.pvm.kernel.PObjectKey;
 import org.fireflow.pvm.kernel.Token;
@@ -32,6 +39,7 @@ import org.fireflow.pvm.pdllogic.ContinueDirection;
 import org.fireflow.pvm.pdllogic.ExecuteResult;
 import org.fireflow.pvm.pdllogic.FaultHandler;
 import org.fireflow.pvm.pdllogic.WorkflowBehavior;
+import org.firesoa.common.schema.NameSpaces;
 
 public class BpelProcess implements WorkflowBehavior{
 	private BpelActivity startActivity = null;
@@ -80,46 +88,22 @@ public class BpelProcess implements WorkflowBehavior{
 			Object workflowElement) {
 		WorkflowSessionLocalImpl sessionLocal = (WorkflowSessionLocalImpl)session;
 		RuntimeContext context = sessionLocal.getRuntimeContext();
-		ProcessInstanceManager processInstanceManager = context.getEngineModule(ProcessInstanceManager.class,BpelConstants.PROCESS_TYPE);
-//		ProcessRepositoryService processRepositoryService = context.getEngineModule(ProcessRepositoryService.class, BpelConstants.PROCESS_TYPE);
 		PersistenceService persistenceStrategy = context.getEngineModule(PersistenceService.class, BpelConstants.PROCESS_TYPE);
-		ProcessPersister processRepositoryPersister = persistenceStrategy.getProcessPersister();
-//		VariableService variableService = context.getEngineModule(VariableService.class, BpelConstants.PROCESS_TYPE);
+
 		ProcessInstancePersister procInstPersistSvc = persistenceStrategy.getProcessInstancePersister();
 
-		
-		ProcessKey pk = ProcessKey.valueOf(token);
-		ProcessDescriptor processDescriptor = processRepositoryPersister.findProcessDescriptorByProcessKey(pk);
 
-		//创建流程实例，设置初始化参数
-		String bizId = (String)session.getAttribute(InternalSessionAttributeKeys.BIZ_ID);
-		Map<String, Object> variables = (Map<String, Object>) session
-				.getAttribute(InternalSessionAttributeKeys.VARIABLES);
-		ActivityInstance parentActivityInstance = session
-				.getCurrentActivityInstance();
-		ProcessInstance parentProcessInstance = session
-				.getCurrentProcessInstance();
 
-		ProcessInstance newProcessInstance = processInstanceManager
-				.createProcessInstance(sessionLocal, workflowElement, bizId, processDescriptor,parentActivityInstance);
-
+		ProcessInstance newProcessInstance = ((WorkflowSessionLocalImpl)session).getCurrentProcessInstance();
+		((ProcessInstanceImpl)newProcessInstance).setTokenId(token.getId());
 		procInstPersistSvc.saveOrUpdate(newProcessInstance);
 		
-		//初始化流程变量
-		if (variables != null && variables.size() > 0) {
-			Iterator<Entry<String, Object>> it = variables.entrySet()
-					.iterator();
-			while (it.hasNext()) {
-				Entry<String, Object> entry = it.next();
-				WorkflowStatement stmt = sessionLocal.createWorkflowStatement(BpelConstants.PROCESS_TYPE);
-				stmt.setVariableValue(newProcessInstance, entry.getKey(), entry.getValue());
-			}
-		}
-		
+
 		token.setProcessInstanceId(newProcessInstance.getId());
 		token.setElementInstanceId(newProcessInstance.getId());
-		
-		sessionLocal.setCurrentProcessInstance(newProcessInstance);
+		TokenPersister tokenPersister = persistenceStrategy.getTokenPersister();
+		tokenPersister.saveOrUpdate(token);
+	
 
 		return true;//true表示告诉虚拟机，“我”已经准备妥当了。
 	}
@@ -156,7 +140,7 @@ public class BpelProcess implements WorkflowBehavior{
 		
 		RuntimeContext ctx = ((WorkflowSessionLocalImpl)session).getRuntimeContext();
 		KernelManager kernelManager = ctx.getDefaultEngineModule(KernelManager.class);
-		kernelManager.fireChildPObject(session, pobjectKey, parentToken);
+		kernelManager.startPObject(session, pobjectKey, parentToken,null);
 		
 		ExecuteResult result = new ExecuteResult();
 		result.setStatus(BusinessStatus.RUNNING);

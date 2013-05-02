@@ -16,15 +16,15 @@
  */
 package org.fireflow.pdl.bpel.enginemodules;
 
-import org.fireflow.engine.WorkflowSession;
+import org.fireflow.client.WorkflowSession;
 import org.fireflow.engine.entity.runtime.ActivityInstance;
 import org.fireflow.engine.entity.runtime.ActivityInstanceState;
 import org.fireflow.engine.entity.runtime.ProcessInstance;
 import org.fireflow.engine.entity.runtime.impl.ActivityInstanceImpl;
-import org.fireflow.engine.exception.ServiceExecutionException;
+import org.fireflow.engine.exception.ServiceInvocationException;
 import org.fireflow.engine.modules.calendar.CalendarService;
 import org.fireflow.engine.modules.instancemanager.ActivityInstanceManager;
-import org.fireflow.engine.modules.instancemanager.event.EventType;
+import org.fireflow.engine.modules.instancemanager.event.ProcessInstanceEventTrigger;
 import org.fireflow.engine.modules.instancemanager.impl.AbsActivityInstanceManager;
 import org.fireflow.pdl.bpel.BpelActivity;
 
@@ -46,6 +46,11 @@ public class ActivityInstanceManagerBpelImpl extends AbsActivityInstanceManager 
 		actInst.setProcessId(processInstance.getProcessId());
 		actInst.setVersion(processInstance.getVersion());
 		actInst.setProcessType(processInstance.getProcessType());
+		
+		actInst.setSubProcessId(processInstance.getSubProcessId());
+		actInst.setSubProcessName(processInstance.getSubProcessName());
+		actInst.setSubProcessDisplayName(processInstance.getSubProcessDisplayName());
+		
 		actInst.setProcessInstanceId(processInstance.getId());
 		actInst.setBizId(processInstance.getBizId());
 		
@@ -64,7 +69,7 @@ public class ActivityInstanceManagerBpelImpl extends AbsActivityInstanceManager 
 	 * @see org.fireflow.engine.instancemanager.ActivityInstanceManager#fireActivityInstanceEvent(org.fireflow.engine.WorkflowSession, org.fireflow.engine.entity.runtime.ActivityInstance, java.lang.Object, int)
 	 */
 	public void fireActivityInstanceEvent(WorkflowSession session,
-			ActivityInstance actInstance, Object workflowElement, EventType eventType) {
+			ActivityInstance actInstance, Object workflowElement, ProcessInstanceEventTrigger eventType) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -74,7 +79,7 @@ public class ActivityInstanceManagerBpelImpl extends AbsActivityInstanceManager 
 	 */
 	public boolean runActivityInstance(WorkflowSession session,
 			Object workflowElement, ActivityInstance activityInstance)
-			throws ServiceExecutionException {
+			throws ServiceInvocationException {
 		// TODO Auto-generated method stub
 		return false;
 	}

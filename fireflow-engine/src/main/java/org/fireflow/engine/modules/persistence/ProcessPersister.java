@@ -16,7 +16,6 @@
  */
 package org.fireflow.engine.modules.persistence;
 
-import java.io.InputStream;
 import java.util.Map;
 
 import org.fireflow.engine.entity.repository.ProcessDescriptor;
@@ -37,11 +36,19 @@ public interface ProcessPersister extends Persister {
 	 * @param process
 	 * @param descriptorKeyValues
 	 * @return
-	 */
+	 * @deprecated
 	public ProcessRepository persistProcessToRepository(Object process,
 			Map<ProcessDescriptorProperty, Object> descriptorKeyValues)throws InvalidModelException;
-	
+	*/
 
+	/**
+	 * 如果descriptor.getId()不为空，表示覆盖；否则表示插入；插入时需要重新计算version字段
+	 * @param processXml
+	 * @param descriptor
+	 * @return
+	 */
+	public ProcessRepository persistProcessToRepository(String processXml,ProcessDescriptor descriptor) ;
+	
 	public ProcessRepository findProcessRepositoryByProcessKey(
 			ProcessKey processKey)throws InvalidModelException;
 	

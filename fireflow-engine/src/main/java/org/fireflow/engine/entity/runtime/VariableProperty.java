@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 import org.fireflow.engine.entity.EntityProperty;
+import org.fireflow.engine.entity.WorkflowEntity;
 
 /**
  * @author 非也
@@ -35,6 +36,7 @@ public enum VariableProperty implements EntityProperty {
 	PROCESS_ID("processId"),
 	VERSION("version"),
 	PROCESS_TYPE("processType"),
+	PROCESS_ELEMENT_ID("processElementId")
 	;
 	private String propertyName = null;
 	private VariableProperty(String propertyName){
@@ -58,6 +60,16 @@ public enum VariableProperty implements EntityProperty {
 		return this.getDisplayName(Locale.getDefault());
 	}
 	
-
+    public static VariableProperty fromValue(String v) {
+        for (VariableProperty c: VariableProperty.values()) {
+            if (c.getPropertyName().equals(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
+    }
+	public String getEntityName(){
+		return WorkflowEntity.ENTITY_NAME_VARIABLE;
+	}
 
 }

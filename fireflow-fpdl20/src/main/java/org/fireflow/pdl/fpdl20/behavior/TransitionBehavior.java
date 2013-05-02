@@ -19,13 +19,12 @@ package org.fireflow.pdl.fpdl20.behavior;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.fireflow.engine.WorkflowSession;
+import org.fireflow.client.WorkflowSession;
 import org.fireflow.pdl.fpdl20.process.Node;
 import org.fireflow.pdl.fpdl20.process.Transition;
 import org.fireflow.pvm.kernel.PObjectKey;
 import org.fireflow.pvm.kernel.Token;
 import org.fireflow.pvm.pdllogic.BusinessStatus;
-import org.fireflow.pvm.pdllogic.CancellationHandler;
 import org.fireflow.pvm.pdllogic.CompensationHandler;
 import org.fireflow.pvm.pdllogic.ContinueDirection;
 import org.fireflow.pvm.pdllogic.ExecuteResult;
@@ -41,9 +40,10 @@ public class TransitionBehavior implements WorkflowBehavior {
 		return null;
 	}
 	
-	public CancellationHandler getCancellationHandler(){
-		return null;
-	}
+	//（2012-02-05，Cancel动作容易和handleTermination混淆，意义也不是特别大，暂且注销）
+//	public CancellationHandler getCancellationHandler(){
+//		return null;
+//	}
 	
 	public FaultHandler getFaultHandler(String errorCode){
 		return null;
@@ -89,7 +89,5 @@ public class TransitionBehavior implements WorkflowBehavior {
 			Object workflowElement) {
 		return true;
 	}
-	public void abort(WorkflowSession session,Token thisToken,Object workflowElement){
-		
-	}
+
 }

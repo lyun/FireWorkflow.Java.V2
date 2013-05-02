@@ -6,11 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.fireflow.engine.Order;
-import org.fireflow.engine.WorkflowQuery;
-import org.fireflow.engine.WorkflowSession;
-import org.fireflow.engine.WorkflowSessionFactory;
-import org.fireflow.engine.WorkflowStatement;
+import org.fireflow.client.WorkflowQuery;
+import org.fireflow.client.WorkflowSession;
+import org.fireflow.client.WorkflowSessionFactory;
+import org.fireflow.client.WorkflowStatement;
+import org.fireflow.client.query.Order;
 import org.fireflow.engine.context.RuntimeContext;
 import org.fireflow.engine.entity.repository.ResourceDescriptorProperty;
 import org.fireflow.engine.entity.runtime.ActivityInstance;
@@ -112,7 +112,7 @@ public class BaseEnviroment4Junit {
 					props.put(ResourceDescriptorProperty.FILE_NAME,
 							"FireWorkflow-Default-Resources.rsc.xml");
 
-					stmt.uploadResources(in, props);
+					stmt.uploadResourcesStream(in, Boolean.TRUE, props);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -144,31 +144,28 @@ public class BaseEnviroment4Junit {
 				runtimeContext, FireWorkflowSystem.getInstance());
 
 		WorkflowQuery<ProcessInstance> q4ProcInst = session
-				.createWorkflowQuery(ProcessInstance.class,
-						PROCESS_TYPE);
+				.createWorkflowQuery(ProcessInstance.class);
 		List<ProcessInstance> processInstanceList = q4ProcInst.list();
 
 		WorkflowQuery<ActivityInstance> q4ActInst = session
-				.createWorkflowQuery(ActivityInstance.class,
-						PROCESS_TYPE);
+				.createWorkflowQuery(ActivityInstance.class);
 		q4ActInst.addOrder(
 				Order.asc(ActivityInstanceProperty.PROCESS_INSTANCE_ID))
 				.addOrder(Order.asc(ActivityInstanceProperty.STEP_NUMBER));
 		List<ActivityInstance> activityInstanceList = q4ActInst.list();
 
-		WorkflowQuery<Token> q4Token = session.createWorkflowQuery(Token.class,
-				PROCESS_TYPE);
+		WorkflowQuery<Token> q4Token = session.createWorkflowQuery(Token.class);
 		q4Token.addOrder(Order.asc(TokenProperty.PROCESS_INSTANCE_ID))
 				.addOrder(Order.asc(TokenProperty.STEP_NUMBER));
 		List<Token> tokenList = q4Token.list();
 
 		WorkflowQuery<Variable> q4Variable = session.createWorkflowQuery(
-				Variable.class, PROCESS_TYPE);
+				Variable.class);
 		q4Variable.addOrder(Order.asc(VariableProperty.SCOPE_ID));
 		List<Variable> variableList = q4Variable.list();
 
 		WorkflowQuery<WorkItem> q4WorkItem = session.createWorkflowQuery(
-				WorkItem.class, PROCESS_TYPE);
+				WorkItem.class);
 		q4WorkItem
 				.addOrder(
 						Order
@@ -180,7 +177,7 @@ public class BaseEnviroment4Junit {
 		List<WorkItem> workItemList = q4WorkItem.list();
 
 		WorkflowQuery<ScheduleJob> q4ScheduleJob = session.createWorkflowQuery(
-				ScheduleJob.class, PROCESS_TYPE);
+				ScheduleJob.class);
 		q4ScheduleJob
 				.addOrder(Order.asc(ScheduleJobProperty.PROCESS_ID))
 				.addOrder(
@@ -204,9 +201,9 @@ public class BaseEnviroment4Junit {
 			System.out.print("\t\t");
 			System.out.print(procInst.getState().getDisplayName());
 			System.out.print("\t\t");
-			System.out.print(procInst.getName());
+			System.out.print(procInst.getProcessName());
 			System.out.print("\t\t");
-			System.out.print(procInst.getDisplayName());
+			System.out.print(procInst.getProcessDisplayName());
 
 			System.out.println("\n");
 		}
@@ -281,7 +278,7 @@ public class BaseEnviroment4Junit {
 			System.out.print("\t\t");
 			System.out.print(var.getDataType());
 			System.out.print("\t\t");
-			System.out.print(var.getValueAsString());
+			System.out.print(var.getPayload());
 			System.out.println("\n");
 		}
 

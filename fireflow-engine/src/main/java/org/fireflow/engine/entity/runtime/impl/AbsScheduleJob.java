@@ -18,9 +18,18 @@ package org.fireflow.engine.entity.runtime.impl;
 
 import java.util.Date;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElementRef;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+
+import org.fireflow.engine.entity.AbsWorkflowEntity;
 import org.fireflow.engine.entity.runtime.ActivityInstance;
 import org.fireflow.engine.entity.runtime.ScheduleJob;
 import org.fireflow.engine.entity.runtime.ScheduleJobState;
+import org.fireflow.server.support.DateTimeXmlAdapter;
 
 /**
  * 
@@ -28,26 +37,37 @@ import org.fireflow.engine.entity.runtime.ScheduleJobState;
  * @author 非也
  * @version 2.0
  */
-public abstract class AbsScheduleJob implements ScheduleJob{
-	private String id;
-	private String name = null;
-	private String displayName = null;
-	private Date createdTime;
-	private Integer triggeredTimes = 0;
-	private Date latestTriggeredTime = null;
+@XmlType(name="absScheduleJobType")
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlSeeAlso({ScheduleJobImpl.class,ScheduleJobHistory.class})
+public abstract class AbsScheduleJob extends AbsWorkflowEntity implements ScheduleJob{
+	protected String name = null;
+	protected String displayName = null;
 	
-	private String triggerType;
-	private String triggerExpression;
-	private Date endTime;
+	@XmlJavaTypeAdapter(DateTimeXmlAdapter.class)
+	protected Date createdTime;
+	protected Integer triggeredTimes = 0;
+	
+	@XmlJavaTypeAdapter(DateTimeXmlAdapter.class)
+	protected Date latestTriggeredTime = null;
+	
+	protected String triggerType;
+	protected String triggerExpression;
+	
+	@XmlJavaTypeAdapter(DateTimeXmlAdapter.class)
+	protected Date endTime;
 
-	private ScheduleJobState state = ScheduleJobState.RUNNING;
-	private ActivityInstance activityInstance;
-	private String processId;
-	private String processType;
-	private Integer version;
-	private Boolean createNewProcessInstance = false;
-	private Boolean cancelAttachedToActivity=false;
-	private String note;
+	protected ScheduleJobState state = ScheduleJobState.RUNNING;
+	
+	@XmlElementRef
+	protected AbsActivityInstance activityInstance;
+	
+	protected String processId;
+	protected String processType;
+	protected Integer version;
+	protected Boolean createNewProcessInstance = false;
+	protected Boolean cancelAttachedToActivity=false;
+	protected String note;
 	
 	
 	/**
@@ -98,18 +118,7 @@ public abstract class AbsScheduleJob implements ScheduleJob{
 	public void setLatestTriggeredTime(Date latestTriggedTime) {
 		this.latestTriggeredTime = latestTriggedTime;
 	}	
-	/**
-	 * @return the id
-	 */
-	public String getId() {
-		return id;
-	}
-	/**
-	 * @param id the id to set
-	 */
-	public void setId(String id) {
-		this.id = id;
-	}
+
 	/**
 	 * @return the cron
 	 */
@@ -158,7 +167,7 @@ public abstract class AbsScheduleJob implements ScheduleJob{
 	 * @param activityInstance the activityInstance to set
 	 */
 	public void setActivityInstance(ActivityInstance activityInstance) {
-		this.activityInstance = activityInstance;
+		this.activityInstance = (AbsActivityInstance)activityInstance;
 	}
 	/**
 	 * @return the processId
@@ -252,4 +261,5 @@ public abstract class AbsScheduleJob implements ScheduleJob{
 	public void setCancelAttachedToActivity(Boolean b){
 		this.cancelAttachedToActivity = b;
 	}
+	
 }

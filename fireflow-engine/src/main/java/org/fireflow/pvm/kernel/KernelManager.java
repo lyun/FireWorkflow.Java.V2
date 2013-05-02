@@ -18,17 +18,27 @@ package org.fireflow.pvm.kernel;
 
 import java.util.List;
 
-import org.fireflow.engine.WorkflowSession;
+import org.fireflow.client.WorkflowSession;
 import org.fireflow.engine.context.EngineModule;
+import org.fireflow.engine.entity.repository.ProcessKey;
+import org.fireflow.engine.entity.runtime.ProcessInstance;
 
 /**
  * @author 非也
  * @version 2.0
  */
 public interface KernelManager extends EngineModule{
-	public void startPObject(WorkflowSession session,PObjectKey pObjectKey);
-	
-	public void fireChildPObject(WorkflowSession session,PObjectKey childPOjbectKey,Token parentToken);
+	public void loadProcess(ProcessKey pk );
+
+	/**
+	 * 
+	 * @param session
+	 * @param childPOjbectKey
+	 * @param parentToken
+	 * @param childProcessInstance 启动ProcessInstance类型的PObject时，需要传入ProcessInstance实例
+	 */
+	public void startPObject(WorkflowSession session,PObjectKey childPOjbectKey,
+			Token parentToken,ProcessInstance childProcessInstance);
 	
 	
 	/**
@@ -80,7 +90,9 @@ public interface KernelManager extends EngineModule{
 	 * @param processType FPDL ,BPMN,BPEL等
 	 * @return
 	 */
-	public Token getToken(String tokenId,String processType);
+	public Token getTokenById(String tokenId,String processType);
+	
+	public Token getTokenByElementInstanceId(String elementInstanceId,String processType);
 	
 	/**
 	 * 获得父Token
@@ -95,6 +107,8 @@ public interface KernelManager extends EngineModule{
 	 * @return
 	 */
 	public PObject getProcessObject(Token token);
+	
+	public Object getWorkflowElement(PObjectKey key);
 	
 	/**
 	 * 获得子token列表。
@@ -120,4 +134,9 @@ public interface KernelManager extends EngineModule{
 	public PObject getProcessObject(PObjectKey key);
 	
 	public void saveOrUpdateToken(Token token);
+	
+	/**
+	 * 将缓存的PObject清除
+	 */
+	public void clearCachedPObject();
 }

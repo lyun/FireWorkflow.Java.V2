@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 import org.fireflow.engine.entity.EntityProperty;
+import org.fireflow.engine.entity.WorkflowEntity;
 
 /**
  * 
@@ -28,17 +29,28 @@ import org.fireflow.engine.entity.EntityProperty;
  * @version 2.0
  */
 public enum ResourceDescriptorProperty implements EntityProperty {
-
 	ID("id"),
-	RESOURCE_ID("resourceId"),
-	RESOURCE_TYPE("resourceType"),
 	NAME("name"),
 	DISPLAY_NAME("displayName"),
 	DESCRIPTION("description"),
 	FILE_NAME("fileName"),
 
-	LATEST_EDITOR("latestEditor"),
-	LATEST_EDIT_TIME("latestEditTime"),
+	BIZ_TYPE("bizType"),
+	
+	PUBLISH_STATE("publishState"),
+	LAST_EDITOR("lastEditor"),
+	LAST_EDIT_TIME("lastEditTime"),
+	LAST_OPERATION("lastOperation"),
+	
+	OWNER_DEPT_ID("ownerDeptId"),
+	OWNER_DEPT_NAME("ownerDeptName"),
+	APPROVER("approver"),
+	APPROVED_TIME("approvedTime"),
+	
+	//resource 特定的属性
+	RESOURCE_ID("resourceId"),
+	RESOURCE_TYPE("resourceType")
+
 
 	;
 	private String propertyName = null;
@@ -61,5 +73,17 @@ public enum ResourceDescriptorProperty implements EntityProperty {
 	
 	public String getDisplayName(){
 		return this.getDisplayName(Locale.getDefault());
+	}
+	
+    public static ResourceDescriptorProperty fromValue(String v) {
+        for (ResourceDescriptorProperty c: ResourceDescriptorProperty.values()) {
+            if (c.getPropertyName().equals(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
+    }
+	public String getEntityName(){
+		return WorkflowEntity.ENTITY_NAME_RESOUCE_DESCRIPTOR;
 	}
 }

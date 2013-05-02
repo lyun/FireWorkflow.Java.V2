@@ -17,7 +17,8 @@
 package org.fireflow.pdl.fpdl20.process.impl;
 
 import org.fireflow.pdl.fpdl20.process.Router;
-import org.fireflow.pdl.fpdl20.process.WorkflowProcess;
+import org.fireflow.pdl.fpdl20.process.SubProcess;
+import org.fireflow.pdl.fpdl20.process.features.router.impl.OrJoinOrSplitRouterFeature;
 
 /**
  * @author 非也
@@ -42,10 +43,7 @@ public class RouterImpl extends SynchronizerImpl implements Router {
 	 * @param workflowProcess
 	 * @param name
 	 */
-	public RouterImpl(WorkflowProcess workflowProcess, String name) {
-		super(workflowProcess, name);
-		// TODO Auto-generated constructor stub
-	}
-
-	
+	public RouterImpl(SubProcess subflow, String name) {
+		super(subflow, name);
+	}	
 }

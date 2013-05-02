@@ -16,30 +16,59 @@
  */
 package org.fireflow.engine.entity.runtime.impl;
 
+import java.util.Date;
+import java.util.Properties;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import javax.xml.namespace.QName;
+
+import org.fireflow.engine.entity.AbsWorkflowEntity;
 import org.fireflow.engine.entity.runtime.Variable;
+import org.fireflow.server.support.DateTimeXmlAdapter;
+import org.fireflow.server.support.ObjectXmlAdapter;
+import org.fireflow.server.support.PropertiesXmlAdapter;
+import org.fireflow.server.support.QNameXmlAdapter;
 
 /**
  * @author 非也
  * @version 2.0
  */
-public abstract class AbsVariable implements Variable {
-	String id = null;
-	String name = null;
+@XmlType(name="absVariableType")
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlSeeAlso({VariableImpl.class,VariableHistory.class})
+public abstract class AbsVariable extends AbsWorkflowEntity implements Variable {
 	String scopeId  = null;
-	String dataType = null;
-	String variableValue = null;
+	String name = null;
 	
+	@XmlJavaTypeAdapter(PropertiesXmlAdapter.class)
+	Properties headers = new Properties();
+	
+	@XmlJavaTypeAdapter(QNameXmlAdapter.class)
+	QName dataType = null;
+//	String javaClassName = null;
+
+//	String valueAsString = null;
+	
+//	String mainSchemaFileName = null;
+	
+//	Map<String,String> schemas = null;
+	@XmlJavaTypeAdapter(ObjectXmlAdapter.class)
+	Object value = null;
+	
+	String processElementId = null;
 	String processId = null;
 	Integer version = null;
 	String processType = null;
 	
-	Object value = null;
-	
-	public String getId() {
-		return id;
+	public String getScopeId() {
+		return scopeId;
 	}
-	public void setId(String id) {
-		this.id = id;
+	public void setScopeId(String scopeId) {
+		this.scopeId = scopeId;
 	}
 	public String getName() {
 		return name;
@@ -47,25 +76,27 @@ public abstract class AbsVariable implements Variable {
 	public void setName(String name) {
 		this.name = name;
 	}
-	public String getScopeId() {
-		return scopeId;
+	
+	
+	public Properties getHeaders() {
+		return headers;
 	}
-	public void setScopeId(String scopeId) {
-		this.scopeId = scopeId;
+	public void setHeaders(Properties headers) {
+		this.headers = headers;
 	}
-
-	public String getDataType() {
+	
+	public QName getDataType() {
 		return dataType;
 	}
-	public void setDataType(String dataType) {
+	public void setDataType(QName dataType) {
 		this.dataType = dataType;
 	}
-	public String getValueAsString() {
-		return variableValue;
-	}
-	public void setValueAsString(String variableValue) {
-		this.variableValue = variableValue;
-	}
+//	public String getValueAsString() {
+//		return valueAsString;
+//	}
+//	public void setValueAsString(String variableValue) {
+//		this.valueAsString = variableValue;
+//	}
 	/**
 	 * @return the processId
 	 */
@@ -103,11 +134,39 @@ public abstract class AbsVariable implements Variable {
 		this.processType = processType;
 	}
 
-	public Object getValue(){
+	public Object getPayload(){
 		return value;
 	}
 	
-	public void setValue(Object value){
+	public void setPayload(Object value){
 		this.value = value;
 	}
+//	public String getMainSchemaFileName() {
+//		return mainSchemaFileName;
+//	}
+//	public void setMainSchemaFileName(String mainSchemaFileName) {
+//		this.mainSchemaFileName = mainSchemaFileName;
+//	}
+//	public Map<String, String> getSchemas() {
+//		return schemas;
+//	}
+//	public void setSchemas(Map<String, String> schemas) {
+//		this.schemas = schemas;
+//	}
+	public String getProcessElementId() {
+		return processElementId;
+	}
+	public void setProcessElementId(String processElementId) {
+		this.processElementId = processElementId;
+	}
+	
+	
+	
+//	public String getJavaClassName() {
+//		return javaClassName;
+//	}
+//	public void setJavaClassName(String javaClassName) {
+//		this.javaClassName = javaClassName;
+//	}
+
 }

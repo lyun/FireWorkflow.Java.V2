@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 import org.fireflow.engine.entity.EntityProperty;
+import org.fireflow.engine.entity.WorkflowEntity;
 
 /**
  * @author 非也
@@ -34,16 +35,20 @@ public enum ProcessInstanceProperty implements EntityProperty {
 	PROCESS_ID("processId"),
 	VERSION("version"),
 	PROCESS_TYPE("processsType"),
+	SUBPROCESS_ID("subProcessId"),
 	
-	NAME("name"),
-	DISPLAY_NAME("displayName"),
-	BIZ_CATEGORY("bizCategory"),
+	PROCESS_NAME("processName"),
+	PROCESS_DISPLAY_NAME("processDisplayName"),
+	BIZ_TYPE("bizType"),
+	
+	SUBPROCESS_NAME("subProcessName"),
+	SUBPROCESS_DISPLAY_NAME("subProcessDisplayName"),
 	
 	STATE("state"),
 	IS_SUSPENDED("isSuspended"),
 	
-	CREATOR_ID("creatorId"),
-	CREATOR_NAME("creatorName"),
+	CREATOR_ID("procInstCreatorId"),
+	CREATOR_NAME("procInstCreatorName"),
 	CREATOR_ORG_ID("creatorOrgId"),
 	CREATOR_ORG_NAME("creatorOrgName"),
 	
@@ -86,6 +91,17 @@ public enum ProcessInstanceProperty implements EntityProperty {
 		return this.getDisplayName(Locale.getDefault());
 	}
 	
+    public static ProcessInstanceProperty fromValue(String v) {
+        for (ProcessInstanceProperty c: ProcessInstanceProperty.values()) {
+            if (c.getPropertyName().equals(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
+    }
+	public String getEntityName(){
+		return WorkflowEntity.ENTITY_NAME_PROCESS_INSTANCE;
+	}
 //	public List<EntityProperty> getAllProperties(){
 //		List<EntityProperty> all = new ArrayList<EntityProperty>();
 //		all.add(ID);

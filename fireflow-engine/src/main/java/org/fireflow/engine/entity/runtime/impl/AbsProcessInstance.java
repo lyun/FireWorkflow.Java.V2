@@ -18,31 +18,45 @@ package org.fireflow.engine.entity.runtime.impl;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Properties;
 
-import org.fireflow.engine.WorkflowSession;
-import org.fireflow.engine.WorkflowStatement;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+
+import org.fireflow.client.WorkflowSession;
+import org.fireflow.client.WorkflowStatement;
+import org.fireflow.engine.entity.AbsWorkflowEntity;
 import org.fireflow.engine.entity.repository.ProcessKey;
 import org.fireflow.engine.entity.runtime.ProcessInstance;
 import org.fireflow.engine.entity.runtime.ProcessInstanceState;
-import org.fireflow.engine.exception.EngineException;
 import org.fireflow.engine.exception.InvalidOperationException;
 import org.fireflow.model.InvalidModelException;
+import org.fireflow.server.support.DateTimeXmlAdapter;
 
 /**
  * @author 非也
  * @version 2.0
  */
-public abstract class AbsProcessInstance implements ProcessInstance {
-	protected String id = null;
+@XmlType(name="absProcessInstanceType")
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlSeeAlso({ProcessInstanceImpl.class,ProcessInstanceHistory.class})
+public abstract class AbsProcessInstance extends AbsWorkflowEntity implements ProcessInstance {
     protected String bizId = null;
 
     protected String processId = null;
     protected Integer version = null;
     protected String processType = null;
+    protected String subflowId = null;
     
-    protected String name = null;
-    protected String displayName = null;
+    protected String processName = null;
+    protected String processDisplayName = null;
     protected String bizCategory = null;
+    
+    protected String subflowName = null;
+    protected String subflowDisplayName = null;
     
     protected ProcessInstanceState state = null;
     protected Boolean suspended = Boolean.FALSE;
@@ -52,9 +66,16 @@ public abstract class AbsProcessInstance implements ProcessInstance {
     protected String creatorOrgId = null;
     protected String creatorOrgName = null;
     
+	@XmlJavaTypeAdapter(DateTimeXmlAdapter.class)
     protected Date createdTime = null;
+	
+	@XmlJavaTypeAdapter(DateTimeXmlAdapter.class)
     protected Date startedTime = null;
+	
+	@XmlJavaTypeAdapter(DateTimeXmlAdapter.class)
     protected Date endTime = null;
+	
+	@XmlJavaTypeAdapter(DateTimeXmlAdapter.class)
     protected Date expiredTime = null;
     
     protected String parentProcessInstanceId = null;
@@ -66,16 +87,6 @@ public abstract class AbsProcessInstance implements ProcessInstance {
     
     protected String note;
     
-	/* (non-Javadoc)
-	 * @see org.fireflow.engine.entity.runtime.ProcessInstance#getId()
-	 */
-	public String getId() {
-		return this.id;
-	}
-	
-	public void setId(String id){
-		this.id = id;
-	}
 
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.entity.runtime.ProcessInstance#bizId()
@@ -147,12 +158,12 @@ public abstract class AbsProcessInstance implements ProcessInstance {
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.entity.runtime.ProcessInstance#getDisplayName()
 	 */
-	public String getDisplayName() {
-		return this.displayName;
+	public String getProcessDisplayName() {
+		return this.processDisplayName;
 	}
 	
-	public void setDisplayName(String displayName){
-		this.displayName = displayName;
+	public void setProcessDisplayName(String displayName){
+		this.processDisplayName = displayName;
 	}
 
 	/* (non-Javadoc)
@@ -182,14 +193,29 @@ public abstract class AbsProcessInstance implements ProcessInstance {
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.entity.runtime.ProcessInstance#getName()
 	 */
-	public String getName() {
-		return this.name;
+	public String getProcessName() {
+		return this.processName;
 	}
 	
-	public void setName(String name){
-		this.name = name;
+	public void setProcessName(String name){
+		this.processName = name;
 	}
 
+	public String getSubProcessName(){
+		return this.subflowName;
+	}
+	
+	public void setSubProcessName(String subflowName){
+		this.subflowName = subflowName;
+	}
+	
+	public String getSubProcessDisplayName(){
+		return this.subflowDisplayName;
+	}
+	
+	public void setSubProcessDisplayName(String subflowDisplayName){
+		this.subflowDisplayName = subflowDisplayName;
+	}
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.entity.runtime.ProcessInstance#getNote()
 	 */
@@ -200,6 +226,7 @@ public abstract class AbsProcessInstance implements ProcessInstance {
 	public void setNote(String note){
 		this.note = note;
 	}
+	
 
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.entity.runtime.ProcessInstance#getParentActivityInstanceId()
@@ -246,6 +273,14 @@ public abstract class AbsProcessInstance implements ProcessInstance {
 	public void setProcessType(String processType){
 		this.processType = processType;
 	}
+	
+    public String getSubProcessId(){
+    	return this.subflowId;
+    }
+    
+    public void setSubProcessId(String subflowId){
+    	this.subflowId = subflowId;
+    }
 	/* (non-Javadoc)
 	 * @see org.fireflow.engine.entity.runtime.ProcessInstance#getStartedTime()
 	 */
@@ -281,11 +316,11 @@ public abstract class AbsProcessInstance implements ProcessInstance {
 
 
 
-	public String getBizCategory() {
+	public String getBizType() {
 		return bizCategory;
 	}
 
-	public void setBizCategory(String bizCategory) {
+	public void setBizType(String bizCategory) {
 		this.bizCategory = bizCategory;
 	}
 
@@ -304,6 +339,11 @@ public abstract class AbsProcessInstance implements ProcessInstance {
 	public String getScopeId(){
 		return this.id;
 	}
+	
+	public String getProcessElementId(){
+		return this.subflowId;
+	}
+	
 	public String getParentScopeId(){
 		return this.parentScopeId;
 	}
@@ -335,6 +375,10 @@ public abstract class AbsProcessInstance implements ProcessInstance {
 	public void setVariableValue(WorkflowSession session ,String name ,Object value)throws InvalidOperationException{
 		WorkflowStatement stmt = session.createWorkflowStatement(this.getProcessType());
 		stmt.setVariableValue(this, name,value);
+	}
+	public void setVariableValue(WorkflowSession session ,String name ,Object value,Properties headers)throws InvalidOperationException{
+		WorkflowStatement stmt = session.createWorkflowStatement(this.getProcessType());
+		stmt.setVariableValue(this, name,value,headers);
 	}
 	public Map<String,Object> getVariableValues(WorkflowSession session){
 		WorkflowStatement stmt = session.createWorkflowStatement(this.getProcessType());

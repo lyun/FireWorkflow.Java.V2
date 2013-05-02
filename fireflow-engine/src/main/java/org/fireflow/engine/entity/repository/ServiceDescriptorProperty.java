@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 import org.fireflow.engine.entity.EntityProperty;
+import org.fireflow.engine.entity.WorkflowEntity;
 
 /**
  * 
@@ -29,17 +30,25 @@ import org.fireflow.engine.entity.EntityProperty;
  */
 public enum ServiceDescriptorProperty implements EntityProperty {
 	ID("id"),
-	SERVICE_ID("serviceId"),
 	NAME("name"),
 	DISPLAY_NAME("displayName"),
 	DESCRIPTION("description"),
 	FILE_NAME("fileName"),
 
-	BIZ_CATEGORY("bizCategory"),
-
-	LATEST_EDITOR("latestEditor"),
-	LATEST_EDIT_TIME("latestEditTime"),
-
+	BIZ_TYPE("bizType"),
+	
+	PUBLISH_STATE("publishState"),
+	LAST_EDITOR("lastEditor"),
+	LAST_EDIT_TIME("lastEditTime"),
+	LAST_OPERATION("lastOperation"),
+	
+	OWNER_DEPT_ID("ownerDeptId"),
+	OWNER_DEPT_NAME("ownerDeptName"),
+	APPROVER("approver"),
+	APPROVED_TIME("approvedTime"),
+	
+	//Service 特定的属性
+	SERVICE_ID("serviceId"),
 	;
 	private String propertyName = null;
 	private ServiceDescriptorProperty(String propertyName){
@@ -61,5 +70,17 @@ public enum ServiceDescriptorProperty implements EntityProperty {
 	
 	public String getDisplayName(){
 		return this.getDisplayName(Locale.getDefault());
+	}
+	
+    public static ServiceDescriptorProperty fromValue(String v) {
+        for (ServiceDescriptorProperty c: ServiceDescriptorProperty.values()) {
+            if (c.getPropertyName().equals(v)) {
+                return c;
+            }
+        }
+        throw new IllegalArgumentException(v);
+    }
+	public String getEntityName(){
+		return WorkflowEntity.ENTITY_NAME_SERVICE_DESCRIPTOR;
 	}
 }
